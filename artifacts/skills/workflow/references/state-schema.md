@@ -210,6 +210,37 @@
 
 ---
 
+## execution
+
+```json
+"execution": {
+  "mode": "auto",
+  "hardLimits": {
+    "phaseMaxDraft": 5,
+    "totalBackCount": 3,
+    "samePhaseBackCount": 2,
+    "designSpecMaxIterations": 3
+  },
+  "halted": false,
+  "haltReason": null,
+  "report": "workflow_docs/reports/{feature-slug}-report.md"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `mode` | string | `manual` (default) or `auto`. Set at `/workflow start` |
+| `hardLimits` | object | Thresholds that halt auto mode |
+| `hardLimits.phaseMaxDraft` | number | Max draftCount per phase before halt. Default 5 |
+| `hardLimits.totalBackCount` | number | Max total back navigations before halt. Default 3 |
+| `hardLimits.samePhaseBackCount` | number | Max back to the same phase before halt. Default 2 |
+| `hardLimits.designSpecMaxIterations` | number | Max Design↔Specify round-trips. Default 3 |
+| `halted` | boolean | True when a hard limit is violated. Workflow paused |
+| `haltReason` | string \| null | Which limit was hit and details |
+| `report` | string \| null | Path to auto-mode report file. null in manual mode |
+
+---
+
 ## meta
 
 ```json
