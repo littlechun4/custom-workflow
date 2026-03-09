@@ -59,8 +59,8 @@ Slice N start (status: pending or needs_rework)
   3. Minimal implementation (Green)
   4. Refactor — improve structure, preserve behavior
   5. Auto-verify:
-     - lint (per project config)
-     - type check
+     - lint (per project config, source code files only — skip static assets, templates, and non-applicable file types)
+     - type check (source code files only)
      - test (full suite or relevant scope)
   6. Commit (see §Commit Convention)
   7. state.json slice status updated (via post-bash hook)
