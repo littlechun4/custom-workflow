@@ -1,0 +1,9 @@
+# Everything ignored by default
+*
+
+# Track artifacts
+!artifacts/
+!artifacts/**
+
+# Track gitignore itself
+!.gitignore
