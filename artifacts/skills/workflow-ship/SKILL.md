@@ -47,10 +47,11 @@ When returning after CI/PR failure → fix → Verify re-approval → Ship re-en
 [Verify approved] ──[/workflow next]──→ Ship entry
   │
   ├─ 1. Update CLAUDE.md (learned patterns)
-  ├─ 2. (Extension: PR) Create or update PR
-  ├─ 3. (Extension: CI) Verify CI passes
-  ├─ 4. (Extension: Issue Tracker) Transition issue status
-  ├─ 5. Archive state.json → .workflow/history/{slug}.json + delete active state
+  ├─ 2. Convert suggestions to issues (if suggestions file exists)
+  ├─ 3. (Extension: PR) Create or update PR
+  ├─ 4. (Extension: CI) Verify CI passes
+  ├─ 5. (Extension: Issue Tracker) Transition issue status
+  ├─ 6. Archive state.json → .workflow/history/{slug}.json + delete active state
   │
   └─ Workflow complete
 ```
@@ -73,7 +74,18 @@ Record patterns learned during this workflow:
 
 **Format**: Add a section or entries under the appropriate existing section in CLAUDE.md. Keep entries concise. Do not duplicate information already present.
 
-### Step 2: (Extension) Create PR
+### Step 2: Convert Suggestions to Issues
+
+Check if `workflow_docs/suggestions/{slug}.md` exists.
+
+- **If file exists**: Present each suggestion to the user and ask whether to create an issue tracker ticket (Jira/GitHub Issue).
+  - User approves → create ticket via issue tracker extension (if active) or note for manual creation
+  - User declines → suggestion remains in the file for future reference only
+- **If file does not exist**: Skip this step.
+
+The suggestions file is **never deleted** — it stays in git as a record of review feedback regardless of whether issues were created.
+
+### Step 3: (Extension) Create PR
 
 Skip if PR extension is not active.
 
@@ -106,7 +118,7 @@ EOF
 - On re-entry: `gh pr edit` to update existing PR (no new PR)
 - Based on `gh` (GitHub CLI). Other platforms (GitLab `glab`, etc.) use the same extension point
 
-### Step 3: (Extension) Verify CI
+### Step 4: (Extension) Verify CI
 
 Skip if CI extension is not active. When inactive, Verify phase's local checks are the final quality gate.
 
@@ -115,7 +127,7 @@ When active:
 - **CI failure recovery**: `gh pr ready --undo` (PR → draft), then back to appropriate phase
 - On re-entry: existing PR is updated
 
-### Step 4: (Extension) Issue Tracker Sync
+### Step 5: (Extension) Issue Tracker Sync
 
 Only runs when `feature.jira` is set:
 
@@ -127,7 +139,7 @@ Only runs when `feature.jira` is set:
 
 When PR extension is inactive, skip "In Review" and transition directly to Done.
 
-### Step 5: Archive state.json
+### Step 6: Archive state.json
 
 ```
 .workflow/state.json → .workflow/history/{slug}.json

@@ -144,6 +144,43 @@ Decision needed:
 
 ---
 
+## Non-Blocking Suggestions File
+
+When viewpoint review produces `[i]` non-blocking items, the phase skill records them in a persistent suggestions file. Unlike `state.json` (archived on Ship), this file remains in git for future reference.
+
+### File Location
+
+```
+workflow_docs/suggestions/{feature-slug}.md
+```
+
+### Format
+
+```markdown
+# Suggestions: {Feature Name}
+
+## {Phase} review ({date})
+
+### 1. {Title}
+
+- **Priority**: low | medium
+- **Related**: `path/to/file`
+- **Description**: {what and why}
+
+### 2. {Title}
+...
+```
+
+### Rules
+
+- **One file per workflow** — all phases append to the same file
+- **Append only** — each phase adds a new `## {Phase} review` section; never modify previous sections
+- **Phase skill responsibility** — reviewer agents produce `[i]` items in output; the invoking phase skill writes them to the file
+- **Skip when empty** — if no non-blocking items, do not create or update the file
+- **Ship phase** — optionally converts remaining suggestions to issue tracker tickets (see workflow-ship)
+
+---
+
 ## Human Gate (Gear 3)
 
 Activated only in gear 3, after Viewpoint passes.

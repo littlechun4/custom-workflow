@@ -191,7 +191,11 @@ Independently of AI review, humans can leave reviews directly in the spec docume
 
 **Gate rule**: Any open `human-review` tag blocks approval.
 
-### 5. Review Sidecar (.review.md)
+### 5. Non-Blocking Suggestions
+
+After viewpoint review, collect all `[i]` non-blocking items and write them to `workflow_docs/suggestions/{feature-slug}.md`. See review-protocol §Non-Blocking Suggestions File for format.
+
+### 6. Review Sidecar (.review.md)
 
 All review issues are recorded in a sidecar file alongside the spec document. This preserves review history separately from the document body.
 

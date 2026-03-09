@@ -269,6 +269,8 @@ List JSON files in `.workflow/history/`:
 | 4 | verify | `/workflow-verify` | `workflow-ship` | None (results in state.json) |
 | 5 | ship | `/workflow-ship` | — | CLAUDE.md update + archive |
 
+Suggestions file (`workflow_docs/suggestions/{feature-slug}.md`) is created during review phases (specify/design/verify) when non-blocking items are found. It persists in git across workflow completion.
+
 ## Phase Status Values
 
 | Status | Meaning |

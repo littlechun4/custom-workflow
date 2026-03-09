@@ -149,6 +149,10 @@ When `/workflow next` is called, the orchestrator invokes this skill's review.
 
 Dispatch to `test-strategist` agent for test coverage evaluation, plus activate the code-reviewer viewpoints. The test-strategist maps every AC to test evidence and identifies coverage gaps.
 
+### Non-Blocking Suggestions
+
+After viewpoint review, collect all `[i]` non-blocking items from both code-reviewer and test-strategist agents and append them to `workflow_docs/suggestions/{feature-slug}.md`. See review-protocol §Non-Blocking Suggestions File for format.
+
 ### Approval Flow
 
 **Gear 2:**

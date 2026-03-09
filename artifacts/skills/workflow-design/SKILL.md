@@ -225,6 +225,10 @@ After viewpoint review passes:
   - [ ] Architecture decisions are sound
   - [ ] Risk mitigation is adequate
 
+### Non-Blocking Suggestions
+
+After viewpoint review, collect all `[i]` non-blocking items and write them to `workflow_docs/suggestions/{feature-slug}.md`. See review-protocol §Non-Blocking Suggestions File for format.
+
 ### Human Inline Review
 
 Humans can leave reviews directly in the design document:
