@@ -202,6 +202,8 @@ When `/workflow next` is called, the orchestrator invokes this skill's review.
 - [ ] No `[OPEN_QUESTION]` markers remain (any remaining blocks approval)
 - [ ] No `[TBD]`, `[TODO]`, `[PENDING]` strings
 - [ ] ADR exists (gear 3 mandatory; gear 2 only when major decision made)
+- [ ] Every slice has non-empty `Changed files` with specific file paths (not directories) — blocks when `parallelMode = true`, warning only otherwise
+- [ ] Every slice has parseable `Precondition` (`None` or slice IDs like `A-1`, `A-1, B-2`) — blocks when `parallelMode = true`, warning only otherwise
 
 ### Viewpoint Review (after auto-gate passes)
 

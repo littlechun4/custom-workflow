@@ -18,6 +18,8 @@ allowed-tools:
   - Bash
 agents:
   review: workflow:test-strategist
+  security: workflow:security-reviewer
+  code: workflow:code-reviewer
 ---
 
 # Verify Phase
@@ -148,6 +150,8 @@ When `/workflow next` is called, the orchestrator invokes this skill's review.
 ### Viewpoint Review (after auto-gate passes)
 
 Dispatch to `test-strategist` agent for test coverage evaluation, plus activate the code-reviewer viewpoints. The test-strategist maps every AC to test evidence and identifies coverage gaps.
+
+Additionally, dispatch `security-reviewer` agent when activation conditions are met (gear 3: always; gear 2: security-related ACs in spec). Runs in parallel with test-strategist.
 
 ### Non-Blocking Suggestions
 

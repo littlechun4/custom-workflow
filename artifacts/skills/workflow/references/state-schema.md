@@ -126,7 +126,9 @@
     "name": "Notification Model",
     "status": "completed",
     "acs": ["R-1"],
-    "commit": "abc1234"
+    "commit": "abc1234",
+    "blockedBy": [],
+    "changedFiles": ["src/models/notification.py", "tests/test_notification.py"]
   },
   {
     "id": "B-1",
@@ -134,7 +136,9 @@
     "status": "needs_rework",
     "acs": ["R-3", "R-4"],
     "commit": "def5678",
-    "reworkReason": "Boundary values 0 and -1 unhandled"
+    "reworkReason": "Boundary values 0 and -1 unhandled",
+    "blockedBy": ["A-1"],
+    "changedFiles": ["src/api/views.py", "tests/test_views.py"]
   }
 ]
 ```
@@ -145,8 +149,10 @@
 | `name` | string | Slice name |
 | `status` | string | `pending` `in_progress` `completed` `needs_rework` |
 | `acs` | array | AC IDs covered by this slice |
-| `commit` | string \| null | Completion commit hash. null if incomplete |
+| `commit` | string \| null | Completion commit hash (original implementation commit, not merge commit). null if incomplete |
 | `reworkReason` | string | Reason for rework when `needs_rework`. Optional |
+| `blockedBy` | array | Predecessor slice IDs. Empty array `[]` = independent. Used for parallel execution scheduling |
+| `changedFiles` | array | Target file paths for this slice. Used for parallel file-conflict validation |
 
 **Slice-Tracker Hook**: Detects `[Slice-ID]` tags in commit messages and auto-updates slice status. Defined in `hooks/hooks.json`.
 
@@ -215,6 +221,8 @@
 ```json
 "execution": {
   "mode": "auto",
+  "parallelMode": false,
+  "maxParallelSlices": 3,
   "hardLimits": {
     "phaseMaxDraft": 5,
     "totalBackCount": 3,
@@ -230,6 +238,8 @@
 | Field | Type | Description |
 |-------|------|-------------|
 | `mode` | string | `manual` (default) or `auto`. Set at `/workflow start` |
+| `parallelMode` | boolean | Parallel slice execution in Implement phase. Default false. Set by `/workflow start --parallel` or `/workflow parallel on` |
+| `maxParallelSlices` | number | Max concurrent worktree agents per tier. Default 3 |
 | `hardLimits` | object | Thresholds that halt auto mode |
 | `hardLimits.phaseMaxDraft` | number | Max draftCount per phase before halt. Default 5 |
 | `hardLimits.totalBackCount` | number | Max total back navigations before halt. Default 3 |

@@ -11,6 +11,7 @@ description: |
   Do NOT use for: spec/design authoring, test strategy, deployment tasks.
 linked-from-skills:
   - workflow-implement: review
+  - workflow-verify: code
 context: fork
 mergeResult: false
 permissionMode: plan
@@ -52,7 +53,7 @@ Produces structured feedback with blocking/non-blocking issue classifications.
 |-------|-------------|
 | Type safety | TypeScript `any` or equivalent escape hatches without justification |
 | Error handling | Catch blocks that swallow errors silently |
-| Security | OWASP Top 10 violations (injection, XSS, CSRF, hardcoded secrets) |
+| Security | OWASP Top 10 violations (injection, XSS, CSRF, hardcoded secrets). Deep analysis delegated to `security-reviewer` agent |
 | Resource leaks | Unclosed connections, file handles, or event listeners |
 | Dead code | Commented-out code blocks or unreachable code paths |
 

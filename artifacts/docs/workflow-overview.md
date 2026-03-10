@@ -53,6 +53,7 @@
 | `/workflow resume` | 기존 state.json에서 세션 복원 |
 | `/workflow history` | 완료된 워크플로우 목록 표시 |
 | `/workflow limits {key} {value}` | 자동 모드 hard limit 변경 |
+| `/workflow parallel [on\|off]` | Implement 페이즈 병렬 실행 토글 |
 
 ---
 
@@ -310,6 +311,51 @@ workflow_docs/spec/
 - Implement: 슬라이스 진행 테이블
 - Verify: 5축 리뷰 결과 요약
 - Ship: 수행된 액션 목록
+
+---
+
+## 6-1. 병렬 실행 모드 (Parallel Mode)
+
+Implement 페이즈에서 독립 슬라이스를 Teams API 기반으로 병렬 실행. `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 필요.
+
+### 활성화
+
+유저 명시 지시로만 활성화 (자동 판단 없음):
+```
+/workflow start {feature} --parallel
+/workflow parallel on
+```
+
+### 구조
+
+```
+Lead (메인 세션)
+  ├─ Teammate(A-1): worktree 격리, 코드 작성
+  ├─ Teammate(B-1): worktree 격리, 코드 작성
+  └─ Teammate(C-1): worktree 격리, 코드 작성
+      ↕ SendMessage (test lock 요청/승인)
+```
+
+- **코드 작성은 병렬**: 각 Teammate가 독립 worktree에서 TDD cycle 수행
+- **테스트 실행은 직렬**: Lead가 test lock으로 한 번에 하나의 테스트만 실행 허용
+- **state.json 업데이트는 Lead 전담**: hook은 Teammate에서 스킵, tier 완료 후 일괄 처리
+
+### Tier 실행 순서
+
+`blockedBy` 배열에서 tier를 계산하여 의존성 순서대로 실행:
+```
+Tier 0: [A-1, B-1, C-1] (독립) → 병렬 실행
+Tier 1: [A-2] (A-1 의존) → A-1 완료 후 실행
+Tier 2: [D-1] (A-2, B-1 의존) → 두 슬라이스 완료 후 실행
+```
+
+같은 tier의 슬라이스들은 `changedFiles` 겹침 검증 → 겹치면 다음 tier로 분리.
+
+### 실패 처리
+
+- Teammate는 직접 에스컬레이션하지 않음 → Lead에 리포트 → 유저가 결정
+- 완료된 슬라이스만 부분 merge, 실패 슬라이스는 pending 유지
+- Rework cascade: upstream 슬라이스 rework 시 downstream 자동 전파
 
 ---
 

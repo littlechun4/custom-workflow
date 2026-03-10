@@ -18,6 +18,7 @@ allowed-tools:
   - Bash
 agents:
   review: workflow:code-reviewer
+  implementer: workflow:slice-implementer
 ---
 
 # Implement Phase
@@ -242,6 +243,120 @@ Completed slices are **preserved**. After design re-approval and implement re-en
 | Refactoring changes structure | No change at design abstraction level |
 
 **Decision criterion**: "Would this difference cause confusion in Verify?" → Yes: escalate. No: continue.
+
+---
+
+## Parallel Execution (Teams-based)
+
+When `execution.parallelMode = true`, independent slices execute in parallel using Teams API with worktree isolation. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+
+Each Teammate is spawned using the `slice-implementer` agent (`model: sonnet`) for cost-effective parallel execution. The Lead (main session) retains its current model.
+
+### Tier Computation
+
+Compute tiers from `blockedBy` at phase entry:
+
+```
+tier(S) = 0                                           if blockedBy(S) = []
+tier(S) = max(tier(dep) for dep in blockedBy(S)) + 1  otherwise
+```
+
+### File Conflict Validation
+
+Before executing a tier, compare `changedFiles` across all same-tier slices:
+- No overlap → parallel execution
+- Overlap found → move conflicting slice to next tier, notify user
+
+### Execution Flow
+
+```
+Lead (main session): Team creation + test lock management + state.json updates
+
+Tier 0: [A-1, B-1, C-1] — spawn Teammates (worktree-isolated)
+  ├─ Teammate(A-1): write test → request test lock → run test (Red) → release
+  │                  write code → request test lock → run test (Green) → release
+  │                  refactor → request test lock → run test → commit [A-1] → release
+  ├─ Teammate(B-1): (same cycle, waits for lock when needed)
+  └─ Teammate(C-1): (same cycle, waits for lock when needed)
+
+All Teammates complete → Lead merges worktree branches (alphabetical order)
+Lead: state.json batch update (slice.commit = original commit hash)
+Lead: worktree cleanup (git worktree remove)
+
+Tier 1: [A-2] — single slice, no worktree needed, sequential execution
+
+Lead: integration test (full suite after all tiers)
+```
+
+When `maxParallelSlices < tier slice count`: batch execution (e.g., 5 slices, max 3 → run 3, wait, run 2).
+
+### Test Lock Protocol
+
+Lead serializes test execution to prevent shared resource conflicts (DB, ports).
+
+```
+Teammate → Lead: SendMessage("test-lock-request", {sliceId, phase: "red|green|refactor"})
+Lead: if lock free → SendMessage("test-lock-granted", {sliceId})
+      if lock held → queue request, grant when released
+Teammate: run test
+Teammate → Lead: SendMessage("test-lock-release", {sliceId, result: "pass|fail"})
+Lead: release lock → grant next queued request
+```
+
+Code writing is parallel; only test execution is serialized. Since code writing takes longer than test execution, most parallelism is preserved.
+
+### Teammate Context
+
+Each Teammate receives:
+
+```
+You are implementing Slice {ID}: {Name}
+You are a Teammate in a parallel implementation team. The Lead manages test execution.
+
+## Your Slice
+- Test intent: {from design}
+- Changed files: {file list}
+- Reference patterns: {from context.referencePatterns}
+
+## Rules
+- TDD cycle: Red → Green → Refactor → commit
+- Commit format: feat({scope}): {description} [{Slice-ID}]
+- ONLY modify files in your Changed files list
+- Do NOT modify spec, design, or state.json
+- Do NOT escalate directly — if blocked, report the issue and stop
+
+## Test Execution Protocol
+- Before running any test, send "test-lock-request" to Lead
+- Wait for "test-lock-granted" before executing tests
+- After test completes, send "test-lock-release" with result
+```
+
+### Teammate Failure Handling
+
+```
+Tier 0 execution:
+  Agent(A-1): completed ✓
+  Agent(B-1): failed (design issue or TDD failure 3×)
+  Agent(C-1): completed ✓
+
+→ Wait for all Teammates to finish (do not abort running agents)
+→ Merge completed slices only (A-1, C-1)
+→ state.json: A-1=completed, C-1=completed, B-1=pending (unchanged)
+→ Report to user with options:
+  A) /workflow back design — re-examine design
+  B) /workflow parallel off → resolve B-1 sequentially
+  C) Retry B-1 only
+```
+
+Teammates do NOT call `/workflow back` directly. They report issues to the Lead, and the user decides.
+
+### Hook Behavior in Parallel Mode
+
+post-bash hook skips state.json updates in Teammate context (detects `agent_id` in hook input). Lead performs batch state.json updates after tier completion.
+
+### Rework in Parallel Mode
+
+`/workflow back --slice B-1`: single sequential execution (no worktree overhead for single slice). Rework cascade applies — downstream slices via `blockedBy` are auto-marked `needs_rework`.
 
 ---
 

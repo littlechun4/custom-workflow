@@ -38,18 +38,24 @@ function main() {
   process.stdin.setEncoding('utf8');
   process.stdin.on('data', (chunk) => { input += chunk; });
   process.stdin.on('end', () => {
-    const state = readState();
-
-    // No active workflow or not in implement phase
-    if (!state || state.phase.current !== 'implement') {
-      process.exit(0);
-      return;
-    }
-
     let toolOutput;
     try {
       toolOutput = JSON.parse(input);
     } catch {
+      process.exit(0);
+      return;
+    }
+
+    // Skip in worktree agent context (parallel mode — Lead handles state updates)
+    if (toolOutput.agent_id) {
+      process.exit(0);
+      return;
+    }
+
+    const state = readState();
+
+    // No active workflow or not in implement phase
+    if (!state || state.phase.current !== 'implement') {
       process.exit(0);
       return;
     }

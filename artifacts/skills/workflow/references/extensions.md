@@ -14,6 +14,7 @@ Default: All extensions **disabled**. When disabled, Ship Phase only runs CLAUDE
 | PR creation | Disabled | Ship Phase |
 | CI check | Disabled | After PR creation |
 | Issue tracker | Disabled | Ship Phase (based on PR status) |
+| Parallel execution | Disabled | Implement Phase |
 
 ---
 
@@ -142,6 +143,26 @@ Only operates when `state.json` → `feature.jira` field is set.
 | Jira | `jira` (Atlassian CLI) | `"jira"` |
 | Linear | `linear` CLI | `"linear"` |
 | GitHub Issues | `gh issue` | `"github"` |
+
+---
+
+## Extension: Parallel Execution
+
+Enables Teams-based parallel slice execution in the Implement phase.
+
+**Prerequisite**: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable.
+
+**Activation**: `/workflow start --parallel` or `/workflow parallel on`
+
+```
+execution.parallelMode = true
+execution.maxParallelSlices = 3   (configurable)
+```
+
+- Independent slices (no `blockedBy` overlap, no `changedFiles` overlap) execute in parallel worktree agents
+- Lead manages test execution via test lock protocol (one test suite at a time)
+- State.json updates are batched per tier (hooks skip in Teammate context)
+- See `workflow-implement` SKILL.md §Parallel Execution for full details
 
 ---
 

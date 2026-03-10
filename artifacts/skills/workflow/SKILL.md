@@ -33,12 +33,13 @@ Manages state transitions and phase dispatch for the 5-phase development workflo
 
 | Command | Purpose |
 |---------|---------|
-| `/workflow start {feature} [--auto]` | Start new workflow (gear detection + state.json creation) |
+| `/workflow start {feature} [--auto] [--parallel]` | Start new workflow (gear detection + state.json creation) |
 | `/workflow next [--force]` | Review current phase → transition to next phase (2-step) |
 | `/workflow back [target] [reason]` | Return to previous/specified phase + record feedback |
 | `/workflow back --slice {id} [reason]` | Rework a specific slice only |
 | `/workflow status` | Display current state dashboard |
 | `/workflow gear [N]` | Manual gear override |
+| `/workflow parallel [on\|off]` | Enable/disable parallel slice execution (Implement phase) |
 | `/workflow abort [reason]` | Abort workflow + archive |
 | `/workflow resume` | Restore session (state.json + artifact loading) |
 | `/workflow history` | List completed/aborted workflows |
@@ -106,6 +107,8 @@ Manages state transitions and phase dispatch for the 5-phase development workflo
   },
   "execution": {
     "mode": "manual",
+    "parallelMode": false,
+    "maxParallelSlices": 3,
     "hardLimits": {
       "phaseMaxDraft": 5,
       "totalBackCount": 3,
@@ -126,6 +129,8 @@ Manages state transitions and phase dispatch for the 5-phase development workflo
 ```
 
 When `--auto` flag is passed, set `execution.mode = "auto"` and `execution.report = "workflow_docs/reports/{feature-slug}-report.md"`.
+
+When `--parallel` flag is passed, set `execution.parallelMode = true`. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable.
 
 Full schema: see imported `references/state-schema.md`.
 
@@ -197,6 +202,24 @@ Overrides blocking issues and forces progression. Records `force_skipped` in `fe
 
 Multiple slices: call `back --slice` repeatedly to mark additional slices as `needs_rework`.
 
+### Rework Cascade (dependency propagation)
+
+When a reworked slice has downstream dependents (via `blockedBy`):
+
+```
+A-1 ← A-2 ← D-1 (dependency chain)
+
+/workflow back --slice A-1 "model restructure needed"
+→ A-1: needs_rework
+→ A-2: needs_rework (depends on A-1, auto-propagated)
+→ D-1: needs_rework (depends on A-2, auto-propagated)
+→ B-1, C-1: completed (no dependency on A-1)
+```
+
+- Propagated slices get `reworkReason: "upstream slice {ID} reworked"`
+- Rework executes in dependency order (A-1 → A-2 → D-1)
+- If downstream slice tests still pass after upstream rework, restore to `completed` without code changes
+
 ### Common Processing
 
 1. Record in `feedback` array: `{fromPhase, toPhase, type, description}`
@@ -248,6 +271,24 @@ Feedback: {count} entries ({unresolved} unresolved)
 - **Downgrading (3→2)**: Keep existing artifacts, apply lower gear requirements for subsequent phases
 - If `phase.status` is `reviewing`/`needs_revision`, reset to `in_progress`
 
+## /workflow parallel [on|off]
+
+Toggle parallel slice execution for the Implement phase. User-explicit only — never auto-activated.
+
+```
+/workflow parallel on    → execution.parallelMode = true
+/workflow parallel off   → execution.parallelMode = false
+```
+
+- Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable
+- Only affects Implement phase (other phases unchanged)
+- Can be toggled before entering Implement phase
+- When enabled, independent slices (no `blockedBy` overlap) execute in parallel worktree agents
+- Lead manages test execution via test lock protocol (one test suite runs at a time)
+- See `workflow-implement` SKILL.md §Parallel Execution for full details
+
+---
+
 ## /workflow abort [reason]
 
 1. Archive `state.json` → `.workflow/history/{slug}.json` (include abort reason)
@@ -259,7 +300,12 @@ Feedback: {count} entries ({unresolved} unresolved)
 1. Read `.workflow/state.json` — determine phase, status, slice progress
 2. Load files listed in `context.loadOnResume`
 3. Check `artifacts.designStale` → if true, notify user
-4. Invoke current phase skill via Skill tool
+4. If `parallelMode = true` and phase is `implement`:
+   - Check for orphaned worktree branches: `git branch --list "wf/slice-*"`
+   - For each found branch, check latest commit for `[Slice-ID]` tag
+   - Report findings and offer to merge completed work
+   - Clean up orphaned worktrees: `git worktree remove`
+5. Invoke current phase skill via Skill tool
 
 **Note**: The SessionStart hook (see `hooks/hooks.json`) handles automatic context injection on session start. `/workflow resume` is for explicit manual restoration when the hook is not active or state needs re-syncing.
 

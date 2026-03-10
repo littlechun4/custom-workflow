@@ -139,7 +139,7 @@ Blocking items found. Add AC for R-3, then run /workflow next again.
 
 ### 2. Viewpoint Review (after auto-gate passes)
 
-Each active viewpoint reviews independently. When 2+ are active, dispatch as sub-agents.
+Each active viewpoint reviews independently. When 2+ are active, dispatch to `spec-reviewer` agent as sub-agent.
 
 | Viewpoint | Activation Condition | Review Focus |
 |-----------|---------------------|--------------|
