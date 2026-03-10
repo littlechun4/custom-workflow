@@ -37,8 +37,9 @@ agents:
 3. Read all implementation code and test files
 4. Run full review across 5 axes (see §Review Axes)
 5. Fix minor issues directly + commit
-6. Report review results
-7. "Review complete. {N} minor fixes applied. Run `/workflow next` to proceed."
+6. Update design document AC Coverage Matrix: set ⬜ → ✅ for all verified ACs
+7. Report review results
+8. "Review complete. {N} minor fixes applied. Run `/workflow next` to proceed."
 
 ### Partial Re-entry (from slice rework)
 
@@ -146,6 +147,7 @@ When `/workflow next` is called, the orchestrator invokes this skill's review.
 - [ ] Lint passes
 - [ ] No existing tests broken (regression)
 - [ ] AC coverage: all R-xxx/C-xxx traceable to tests
+- [ ] Design document AC Coverage Matrix updated (⬜ → ✅ for verified ACs)
 
 ### Viewpoint Review (after auto-gate passes)
 

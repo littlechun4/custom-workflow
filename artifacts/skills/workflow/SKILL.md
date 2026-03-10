@@ -55,7 +55,20 @@ Manages state transitions and phase dispatch for the 5-phase development workflo
      - `b) /workflow abort` — archive existing, then start new
      - `c) /workflow status` — check current state before deciding
 2. Explore codebase to detect gear level
-3. Gear 1 → skip workflow — advise "Implement directly" and exit
+3. Gear 1 → skip workflow:
+   - Create `.workflow/` directory if it doesn't exist
+   - Write `.workflow/history/{slug}.json`:
+     ```json
+     {
+       "feature": "{feature}",
+       "slug": "{feature-slug}",
+       "gear": 1,
+       "type": "direct",
+       "gearReason": "{detection rationale}",
+       "completedAt": "{ISO8601}"
+     }
+     ```
+   - Advise "Implement directly" and exit
 4. Gear 2-3:
    - Create `.workflow/` directory
    - Create `state.json` (initial values below)
@@ -314,9 +327,12 @@ Toggle parallel slice execution for the Implement phase. User-explicit only — 
 List JSON files in `.workflow/history/`:
 ```
 [workflow] Completed/Aborted Workflows:
-  1. user-notifications (completed, 2026-03-05)
-  2. auth-refactor (aborted: "scope too large", 2026-03-03)
+  1. user-notifications (gear 2, completed, 2026-03-05)
+  2. fix-button-label-typo (gear 1, direct, 2026-03-04)
+  3. auth-refactor (gear 2, aborted: "scope too large", 2026-03-03)
 ```
+
+Gear 1 entries show `direct` instead of a phase status.
 
 ---
 
