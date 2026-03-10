@@ -50,8 +50,9 @@ When returning after CI/PR failure → fix → Verify re-approval → Ship re-en
   ├─ 2. Convert suggestions to issues (if suggestions file exists)
   ├─ 3. (Extension: PR) Create or update PR
   ├─ 4. (Extension: CI) Verify CI passes
-  ├─ 5. (Extension: Issue Tracker) Transition issue status
-  ├─ 6. Archive state.json → .workflow/history/{slug}.json + delete active state
+  ├─ 5. (Extension: PR Auto-Merge) Merge PR + delete branches
+  ├─ 6. (Extension: Issue Tracker) Transition issue status
+  ├─ 7. Archive state.json → .workflow/history/{slug}.json + delete active state
   │
   └─ Workflow complete
 ```
@@ -127,19 +128,45 @@ When active:
 - **CI failure recovery**: `gh pr ready --undo` (PR → draft), then back to appropriate phase
 - On re-entry: existing PR is updated
 
-### Step 5: (Extension) Issue Tracker Sync
+### Step 5: (Extension) PR Auto-Merge
+
+Skip if PR auto-merge extension is not active, or if PR extension is not active.
+
+When active (after CI passes or after PR creation if CI is inactive):
+
+```bash
+gh pr merge --squash --delete-branch
+```
+
+Then clean up the local branch:
+
+```bash
+git checkout main
+git pull origin main
+git branch -d {feature-branch}
+```
+
+**Rules:**
+- Uses `--squash` for a clean single-commit history on main
+- `--delete-branch` removes the remote branch automatically
+- Local branch is deleted after switching to main
+- On failure: do NOT retry automatically. Report the error and let the user decide.
+- If PR has unresolved review comments, `gh pr merge` will fail — this is expected. Report and wait for user action.
+
+### Step 6: (Extension) Issue Tracker Sync
 
 Only runs when `feature.jira` is set:
 
 | Workflow Event | Issue Transition |
 |----------------|-----------------|
-| Ship phase (PR active) | In Progress → In Review |
+| Ship phase (PR active, auto-merge inactive) | In Progress → In Review |
+| Ship phase (PR active, auto-merge active) | In Progress → Done (after merge) |
 | Ship phase (PR inactive) | In Progress → Done |
-| After PR merge | In Review → Done |
+| After manual PR merge | In Review → Done |
 
-When PR extension is inactive, skip "In Review" and transition directly to Done.
+When PR auto-merge is active, the issue transitions directly to Done since the PR is merged within Ship. When PR extension is inactive, skip "In Review" and transition directly to Done.
 
-### Step 6: Archive state.json
+### Step 7: Archive state.json
 
 ```
 .workflow/state.json → .workflow/history/{slug}.json
@@ -157,7 +184,7 @@ When PR extension is inactive, skip "In Review" and transition directly to Done.
 ```
 Ship entry → PR created → CI runs
   │
-  ├─ CI passes → Archive → Workflow complete
+  ├─ CI passes → (Auto-Merge → Branch cleanup) → Archive → Workflow complete
   │
   └─ CI fails
        ├─ gh pr ready --undo (PR → draft)
@@ -197,6 +224,7 @@ Extensions are configured in the project's CLAUDE.md or extensions reference:
 | Extension | Default | Description |
 |-----------|---------|-------------|
 | PR Creation | Inactive | Run `gh pr create` in Ship |
+| PR Auto-Merge | Inactive | Merge PR + delete branches after CI passes |
 | CI Check | Inactive | Wait for CI pass after PR |
 | Issue Tracker | Inactive | Transition Jira/Linear status |
 
