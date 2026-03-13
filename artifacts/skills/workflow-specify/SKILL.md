@@ -15,6 +15,7 @@ allowed-tools:
   - Edit
   - Glob
   - Grep
+  - Bash
 imports:
   - assets/template-spec.md
 agents:
@@ -38,14 +39,16 @@ agents:
 4. Update `state.json`:
    - `artifacts.spec = "workflow_docs/spec/{feature}.md"`
    - Add spec file path to `context.loadOnResume`
-5. "Draft complete. Run `/workflow next` to start review."
+5. Commit spec document: `git add workflow_docs/spec/{feature}.md && git commit -m "docs(specify): add spec for {feature}"`
+6. "Draft complete. Run `/workflow next` to start review."
 
 ### Re-entry (returned via back)
 
 1. Load existing spec document
 2. Check `feedback` array for return reason
 3. Begin revision addressing the reason
-4. "Return reason: {reason}. Revising spec."
+4. Commit revised spec: `git add workflow_docs/spec/{feature}.md && git commit -m "docs(specify): revise spec for {feature}"`
+5. "Return reason: {reason}. Revising spec."
 
 ---
 
@@ -235,6 +238,7 @@ workflow_docs/spec/
 2. Revise spec document body to address each `RI-xxx`
 3. Add `v(N+1)` row to Change History section in spec document
 4. Update `state.json`: `draftCount += 1`, `status = "in_progress"`
+5. Commit changes: `git add workflow_docs/spec/ && git commit -m "docs(specify): revise spec v{N+1} for {feature}"`
 
 ---
 

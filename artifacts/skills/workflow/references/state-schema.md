@@ -239,7 +239,7 @@
 |-------|------|-------------|
 | `mode` | string | `manual` (default) or `auto`. Set at `/workflow start` |
 | `parallelMode` | boolean | Parallel slice execution in Implement phase. Default false. Set by `/workflow start --parallel` or `/workflow parallel on` |
-| `maxParallelSlices` | number | Max concurrent worktree agents per tier. Default 3 |
+| `maxParallelSlices` | number | Max concurrent agents per tier. Default 3 |
 | `hardLimits` | object | Thresholds that halt auto mode |
 | `hardLimits.phaseMaxDraft` | number | Max draftCount per phase before halt. Default 5 |
 | `hardLimits.totalBackCount` | number | Max total back navigations before halt. Default 3 |

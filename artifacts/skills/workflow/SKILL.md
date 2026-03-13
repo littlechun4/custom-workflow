@@ -296,7 +296,7 @@ Toggle parallel slice execution for the Implement phase. User-explicit only — 
 - Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable
 - Only affects Implement phase (other phases unchanged)
 - Can be toggled before entering Implement phase
-- When enabled, independent slices (no `blockedBy` overlap) execute in parallel worktree agents
+- When enabled, independent slices (no `blockedBy` overlap) execute in parallel on a shared working copy
 - Lead manages test execution via test lock protocol (one test suite runs at a time)
 - See `workflow-implement` SKILL.md §Parallel Execution for full details
 
@@ -314,10 +314,8 @@ Toggle parallel slice execution for the Implement phase. User-explicit only — 
 2. Load files listed in `context.loadOnResume`
 3. Check `artifacts.designStale` → if true, notify user
 4. If `parallelMode = true` and phase is `implement`:
-   - Check for orphaned worktree branches: `git branch --list "wf/slice-*"`
-   - For each found branch, check latest commit for `[Slice-ID]` tag
-   - Report findings and offer to merge completed work
-   - Clean up orphaned worktrees: `git worktree remove`
+   - Check `slices` array for incomplete slices (status != `completed`)
+   - Report progress and offer to continue remaining slices
 5. Invoke current phase skill via Skill tool
 
 **Note**: The SessionStart hook (see `hooks/hooks.json`) handles automatic context injection on session start. `/workflow resume` is for explicit manual restoration when the hook is not active or state needs re-syncing.

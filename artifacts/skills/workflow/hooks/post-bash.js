@@ -46,7 +46,7 @@ function main() {
       return;
     }
 
-    // Skip in worktree agent context (parallel mode — Lead handles state updates)
+    // Skip in Teammate agent context (parallel mode — Lead handles state updates and commits)
     if (toolOutput.agent_id) {
       process.exit(0);
       return;

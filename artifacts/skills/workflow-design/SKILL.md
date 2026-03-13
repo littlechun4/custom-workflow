@@ -15,6 +15,7 @@ allowed-tools:
   - Edit
   - Glob
   - Grep
+  - Bash
 imports:
   - assets/template-design.md
   - assets/template-adr.md
@@ -47,6 +48,7 @@ agents:
 5. If gear 3, create ADR using [assets/template-adr.md](assets/template-adr.md)
    - Output: `workflow_docs/adr/ADR-NNN-{title}.md`
    - Add path to `artifacts.adr` array
+6. Commit design document (and ADR if created): `git add workflow_docs/design/{feature}.md workflow_docs/adr/ && git commit -m "docs(design): add design for {feature}"`
 
 ### Re-entry (returned via back)
 
@@ -54,7 +56,8 @@ agents:
 2. Check `feedback` array for return reason
 3. If `artifacts.designStale = true`, reconcile with updated spec
 4. Begin revision addressing the reason
-5. "Return reason: {reason}. Revising design."
+5. Commit revised design: `git add workflow_docs/design/{feature}.md && git commit -m "docs(design): revise design for {feature}"`
+6. "Return reason: {reason}. Revising design."
 
 ---
 
@@ -291,6 +294,7 @@ workflow_docs/design/
 2. Revise design document body to address each `RI-xxx`
 3. Add `v(N+1)` row to Change History section in design document
 4. Update `state.json`: `draftCount += 1`, `status = "in_progress"`
+5. Commit changes: `git add workflow_docs/design/ && git commit -m "docs(design): revise design v{N+1} for {feature}"`
 
 ---
 

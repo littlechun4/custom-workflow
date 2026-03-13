@@ -159,8 +159,8 @@ execution.parallelMode = true
 execution.maxParallelSlices = 3   (configurable)
 ```
 
-- Independent slices (no `blockedBy` overlap, no `changedFiles` overlap) execute in parallel worktree agents
-- Lead manages test execution via test lock protocol (one test suite at a time)
+- Independent slices (no `blockedBy` overlap, no `changedFiles` overlap) execute in parallel on a shared working copy
+- Lead manages test execution (test lock) and git commits (commit lock)
 - State.json updates are batched per tier (hooks skip in Teammate context)
 - See `workflow-implement` SKILL.md §Parallel Execution for full details
 

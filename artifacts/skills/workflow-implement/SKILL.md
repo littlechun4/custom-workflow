@@ -248,9 +248,9 @@ Completed slices are **preserved**. After design re-approval and implement re-en
 
 ## Parallel Execution (Teams-based)
 
-When `execution.parallelMode = true`, independent slices execute in parallel using Teams API with worktree isolation. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+When `execution.parallelMode = true`, independent slices execute in parallel using Teams API on a shared working copy. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 
-Each Teammate is spawned using the `slice-implementer` agent (`model: sonnet`) for cost-effective parallel execution. The Lead (main session) retains its current model.
+Each Teammate is spawned using the `slice-implementer` agent (`model: sonnet`) for cost-effective parallel execution. The Lead (main session) retains its current model. Teammates write code only — test execution and git commits are serialized by the Lead.
 
 ### Tier Computation
 
@@ -270,20 +270,18 @@ Before executing a tier, compare `changedFiles` across all same-tier slices:
 ### Execution Flow
 
 ```
-Lead (main session): Team creation + test lock management + state.json updates
+Lead (main session): Team creation + lock management + commits + state.json updates
 
-Tier 0: [A-1, B-1, C-1] — spawn Teammates (worktree-isolated)
+Tier 0: [A-1, B-1, C-1] — spawn Teammates (shared working copy)
   ├─ Teammate(A-1): write test → request test lock → run test (Red) → release
   │                  write code → request test lock → run test (Green) → release
-  │                  refactor → request test lock → run test → commit [A-1] → release
-  ├─ Teammate(B-1): (same cycle, waits for lock when needed)
-  └─ Teammate(C-1): (same cycle, waits for lock when needed)
+  │                  refactor → request test lock → run test → release
+  │                  → request commit lock → Lead commits [A-1] → release
+  ├─ Teammate(B-1): (same cycle, waits for locks when needed)
+  └─ Teammate(C-1): (same cycle, waits for locks when needed)
 
-All Teammates complete → Lead merges worktree branches (alphabetical order)
-Lead: state.json batch update (slice.commit = original commit hash)
-Lead: worktree cleanup (git worktree remove)
-
-Tier 1: [A-2] — single slice, no worktree needed, sequential execution
+All Teammates complete → Lead: state.json batch update
+Tier 1: [A-2] — single slice, sequential execution
 
 Lead: integration test (full suite after all tiers)
 ```
@@ -303,7 +301,18 @@ Teammate → Lead: SendMessage("test-lock-release", {sliceId, result: "pass|fail
 Lead: release lock → grant next queued request
 ```
 
-Code writing is parallel; only test execution is serialized. Since code writing takes longer than test execution, most parallelism is preserved.
+### Commit Lock Protocol
+
+Lead serializes git commits to prevent staging/index conflicts on the shared working copy.
+
+```
+Teammate → Lead: SendMessage("commit-lock-request", {sliceId, files: [...], message: "feat(...): ... [Slice-ID]"})
+Lead: stage files + commit + SendMessage("commit-lock-granted", {sliceId, commit: "{hash}"})
+```
+
+Teammates do NOT run `git add` or `git commit` directly. The Lead performs all git operations.
+
+Code writing is parallel; test execution and commits are serialized. Since code writing takes longer than either, most parallelism is preserved.
 
 ### Teammate Context
 
@@ -311,7 +320,7 @@ Each Teammate receives:
 
 ```
 You are implementing Slice {ID}: {Name}
-You are a Teammate in a parallel implementation team. The Lead manages test execution.
+You are a Teammate in a parallel implementation team. The Lead manages test execution and git commits.
 
 ## Your Slice
 - Test intent: {from design}
@@ -319,16 +328,21 @@ You are a Teammate in a parallel implementation team. The Lead manages test exec
 - Reference patterns: {from context.referencePatterns}
 
 ## Rules
-- TDD cycle: Red → Green → Refactor → commit
-- Commit format: feat({scope}): {description} [{Slice-ID}]
+- TDD cycle: Red → Green → Refactor → request commit
 - ONLY modify files in your Changed files list
 - Do NOT modify spec, design, or state.json
+- Do NOT run git add/commit — request commit lock from Lead
 - Do NOT escalate directly — if blocked, report the issue and stop
 
 ## Test Execution Protocol
 - Before running any test, send "test-lock-request" to Lead
 - Wait for "test-lock-granted" before executing tests
 - After test completes, send "test-lock-release" with result
+
+## Commit Protocol
+- After TDD cycle completes (all tests pass), send "commit-lock-request" to Lead
+  with {sliceId, files: [changed file list], message: "feat({scope}): {description} [{Slice-ID}]"}
+- Lead stages, commits, and responds with commit hash
 ```
 
 ### Teammate Failure Handling
@@ -340,7 +354,7 @@ Tier 0 execution:
   Agent(C-1): completed ✓
 
 → Wait for all Teammates to finish (do not abort running agents)
-→ Merge completed slices only (A-1, C-1)
+→ Completed slices already committed by Lead (A-1, C-1)
 → state.json: A-1=completed, C-1=completed, B-1=pending (unchanged)
 → Report to user with options:
   A) /workflow back design — re-examine design
@@ -356,7 +370,7 @@ post-bash hook skips state.json updates in Teammate context (detects `agent_id` 
 
 ### Rework in Parallel Mode
 
-`/workflow back --slice B-1`: single sequential execution (no worktree overhead for single slice). Rework cascade applies — downstream slices via `blockedBy` are auto-marked `needs_rework`.
+`/workflow back --slice B-1`: single sequential execution. Rework cascade applies — downstream slices via `blockedBy` are auto-marked `needs_rework`.
 
 ---
 

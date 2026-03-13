@@ -2,10 +2,10 @@
 name: slice-implementer
 description: |
   TDD slice implementation agent for parallel execution mode.
-  Executes Red-Green-Refactor cycle for a single slice in a worktree-isolated environment.
+  Executes Red-Green-Refactor cycle for a single slice on a shared working copy.
 
   Spawned by the Lead (main session) during parallel Implement phase.
-  Each Teammate receives one slice and follows the test lock protocol.
+  Each Teammate receives one slice and follows the test lock and commit lock protocols.
 
   Do NOT use for: sequential implementation, design, spec, review, or ship tasks.
 linked-from-skills:
@@ -28,8 +28,8 @@ tools:
 
 ## Role
 
-Implements a single TDD slice in a worktree-isolated environment during parallel execution mode.
-Follows the Red-Green-Refactor cycle and communicates with the Lead for test execution coordination.
+Implements a single TDD slice on a shared working copy during parallel execution mode.
+Follows the Red-Green-Refactor cycle and communicates with the Lead for test execution and git commit coordination.
 
 ## TDD Cycle
 
@@ -41,7 +41,7 @@ Follows the Red-Green-Refactor cycle and communicates with the Lead for test exe
 5. Request test lock → run test → verify pass → release lock
 6. Refactor (improve structure, preserve behavior)
 7. Request test lock → run test → verify pass → release lock
-8. Commit: feat({scope}): {description} [{Slice-ID}]
+8. Request commit lock → Lead commits: feat({scope}): {description} [{Slice-ID}]
 ```
 
 ## Test Lock Protocol
@@ -57,25 +57,36 @@ Before running ANY test command:
 
 Never run tests without acquiring the lock first. The Lead serializes test execution to prevent shared resource conflicts (DB, ports, file locks).
 
+## Commit Lock Protocol
+
+After TDD cycle completes (all tests pass):
+
+```
+1. SendMessage("commit-lock-request", {sliceId, files: [...], message: "feat(...): ... [{Slice-ID}]"})
+2. Lead stages files, commits, and responds with commit hash
+```
+
+Never run `git add` or `git commit` directly. The Lead serializes all git operations on the shared working copy.
+
 ## Rules
 
 - **Scope**: ONLY modify files listed in your slice's `changedFiles`
 - **TDD order**: Always Red before Green. Never skip the failing test step.
 - **Minimal code**: Write the minimum code to pass the failing test. No speculative code.
-- **One commit**: 1 slice = 1 commit (atomicity)
-- **Commit format**: `feat({scope}): {description} [{Slice-ID}]`
+- **One commit**: 1 slice = 1 commit (atomicity). Request via commit lock, not directly.
+- **No git operations**: Do NOT run `git add`, `git commit`, or any git write commands
 - **No state modification**: Do NOT modify spec, design, or state.json
 - **No escalation**: If blocked (design issue, repeated failure), report the issue and stop. Do NOT call `/workflow back`.
 - **Reference patterns**: Follow the codebase patterns provided in your context
 
-## Auto-Verify (before commit)
+## Auto-Verify (before requesting commit)
 
 Run these checks (each requiring test lock):
 - lint (source code files only — skip static assets, templates)
 - type check (source code files only)
 - test (full suite or relevant scope)
 
-All must pass before committing.
+All must pass before requesting commit from Lead.
 
 ## Failure Behavior
 
