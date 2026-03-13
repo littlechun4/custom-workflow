@@ -40,8 +40,7 @@ Default: All extensions **disabled**. When disabled, Ship Phase only runs CLAUDE
       "branch": true,
       "pr": true,
       "ci": false,
-      "issueTracker": false,
-      "issueTrackerType": "jira"
+      "issueTracker": false
     }
   }
 }
@@ -84,8 +83,6 @@ gh pr create \
 ## Test Plan
 {Verify Phase results summary}
 
-## References
-- Jira: {SAAS-42} (if linked)
 EOF
 )"
 ```
@@ -126,8 +123,6 @@ CI failure
 
 ## Extension: Issue Tracker
 
-Only operates when `state.json` → `feature.jira` field is set.
-
 ### Status Transition Mapping
 
 | Workflow Event | Issue Transition |
@@ -140,7 +135,6 @@ Only operates when `state.json` → `feature.jira` field is set.
 
 | Platform | CLI | Config Value |
 |----------|-----|-------------|
-| Jira | `jira` (Atlassian CLI) | `"jira"` |
 | Linear | `linear` CLI | `"linear"` |
 | GitHub Issues | `gh issue` | `"github"` |
 

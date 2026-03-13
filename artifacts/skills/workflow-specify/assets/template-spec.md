@@ -2,7 +2,6 @@
 <!-- workflow: specify | draftCount: 1 | status: in_progress -->
 
 > Date: {YYYY-MM-DD}
-> Issue: {JIRA-123 or "none"}
 
 ---
 

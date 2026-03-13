@@ -28,7 +28,6 @@
 "feature": {
   "name": "User Notifications",
   "slug": "user-notifications",
-  "jira": "SAAS-42",
   "branch": "feat/user-notifications",
   "pr": "https://github.com/org/repo/pull/123"
 }
@@ -38,7 +37,6 @@
 |-------|------|-------------|
 | `name` | string | Feature name provided at `/workflow start` |
 | `slug` | string | kebab-case conversion (used for archive filenames) |
-| `jira` | string \| null | Linked Jira issue key. null if not linked |
 | `branch` | string \| null | Recorded when branch extension is enabled. Default null |
 | `pr` | string \| null | PR URL recorded during Ship phase |
 

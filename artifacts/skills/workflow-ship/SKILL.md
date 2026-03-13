@@ -79,7 +79,7 @@ Record patterns learned during this workflow:
 
 Check if `workflow_docs/suggestions/{slug}.md` exists.
 
-- **If file exists**: Present each suggestion to the user and ask whether to create an issue tracker ticket (Jira/GitHub Issue).
+- **If file exists**: Present each suggestion to the user and ask whether to create an issue tracker ticket (GitHub Issue/Linear).
   - User approves → create ticket via issue tracker extension (if active) or note for manual creation
   - User declines → suggestion remains in the file for future reference only
 - **If file does not exist**: Skip this step.
@@ -108,8 +108,6 @@ gh pr create \
 ## Test Plan
 {Verify phase results summary}
 
-## References
-- Issue: {JIRA-42} (if linked)
 EOF
 )"
 ```
@@ -154,8 +152,6 @@ git branch -d {feature-branch}
 - If PR has unresolved review comments, `gh pr merge` will fail — this is expected. Report and wait for user action.
 
 ### Step 6: (Extension) Issue Tracker Sync
-
-Only runs when `feature.jira` is set:
 
 | Workflow Event | Issue Transition |
 |----------------|-----------------|
@@ -226,7 +222,7 @@ Extensions are configured in the project's CLAUDE.md or extensions reference:
 | PR Creation | Inactive | Run `gh pr create` in Ship |
 | PR Auto-Merge | Inactive | Merge PR + delete branches after CI passes |
 | CI Check | Inactive | Wait for CI pass after PR |
-| Issue Tracker | Inactive | Transition Jira/Linear status |
+| Issue Tracker | Inactive | Transition issue status (Linear/GitHub Issues) |
 
 When all extensions are inactive, Ship completes with CLAUDE.md update + archive only.
 

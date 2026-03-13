@@ -11,7 +11,6 @@ This project uses the structured development workflow (`/workflow`).
 <!-- - PR creation: enabled -->
 <!-- - CI check: enabled -->
 <!-- - Issue tracker: enabled -->
-<!-- - Issue tracker type: jira -->
 
 ### Source Directories
 
