@@ -18,8 +18,6 @@ allowed-tools:
   - Bash
 imports:
   - references/state-schema.md
-  - references/review-protocol.md
-  - references/extensions.md
 hooks: hooks/hooks.json
 ---
 
@@ -28,6 +26,17 @@ hooks: hooks/hooks.json
 Manages state transitions and phase dispatch for the 5-phase development workflow.
 
 **Principle**: The orchestrator handles **state transitions only**. Phase-internal activities (document authoring, code implementation, review) are delegated to each phase skill.
+
+## Conditional Reference Loading
+
+Load these references on demand — do NOT read them unless the condition applies:
+
+| Reference | When to Read |
+|-----------|-------------|
+| `references/review-protocol.md` | On `/workflow next` (review + transition) |
+| `references/extensions.md` | On `/workflow start` (branch extension) and Ship phase |
+| `references/auto-mode.md` | When `execution.mode = "auto"` in state.json |
+| `references/back-navigation.md` | On `/workflow back` (cascade logic + target mapping) |
 
 ## Commands
 
@@ -39,7 +48,7 @@ Manages state transitions and phase dispatch for the 5-phase development workflo
 | `/workflow back --slice {id} [reason]` | Rework a specific slice only |
 | `/workflow status` | Display current state dashboard |
 | `/workflow gear [N]` | Manual gear override |
-| `/workflow parallel [on\|off]` | Enable/disable parallel slice execution (Implement phase) |
+| `/workflow parallel [on|off]` | Enable/disable parallel slice execution (Implement phase) |
 | `/workflow abort [reason]` | Abort workflow + archive |
 | `/workflow resume` | Restore session (state.json + artifact loading) |
 | `/workflow history` | List completed/aborted workflows |
@@ -71,7 +80,7 @@ Manages state transitions and phase dispatch for the 5-phase development workflo
    - Advise "Implement directly" and exit
 4. Gear 2-3:
    - Create `.workflow/` directory
-   - Create `state.json` (initial values below)
+   - Initialize `state.json` per `references/state-schema.md`. Key overrides: `--auto` sets `execution.mode = "auto"` and `execution.report = "workflow_docs/reports/{feature-slug}-report.md"`, `--parallel` sets `execution.parallelMode = true`.
    - Invoke `/workflow-specify` via Skill tool
 
 ### Gear Detection Criteria
@@ -82,70 +91,6 @@ Manages state transitions and phase dispatch for the 5-phase development workflo
   No  + 3-10 files → Gear 2
   No  + 10+ files  → Gear 3
 ```
-
-### Initial state.json
-
-```json
-{
-  "$schema": "workflow-state-v1",
-  "feature": {
-    "name": "{feature}",
-    "slug": "{feature-slug}",
-    "jira": null,
-    "branch": null,
-    "pr": null
-  },
-  "gear": {
-    "detected": 2,
-    "override": null,
-    "reason": "{detection rationale}"
-  },
-  "phase": {
-    "current": "specify",
-    "status": "in_progress",
-    "draftCount": 0,
-    "history": []
-  },
-  "artifacts": {
-    "spec": null,
-    "design": null,
-    "designStale": false,
-    "adr": []
-  },
-  "slices": [],
-  "feedback": [],
-  "context": {
-    "loadOnResume": [],
-    "referencePatterns": []
-  },
-  "execution": {
-    "mode": "manual",
-    "parallelMode": false,
-    "maxParallelSlices": 3,
-    "hardLimits": {
-      "phaseMaxDraft": 5,
-      "totalBackCount": 3,
-      "samePhaseBackCount": 2,
-      "designSpecMaxIterations": 3
-    },
-    "halted": false,
-    "haltReason": null,
-    "report": null
-  },
-  "meta": {
-    "createdAt": "{ISO8601}",
-    "updatedAt": "{ISO8601}",
-    "designSpecIterations": 0,
-    "workflowVersion": "1.0"
-  }
-}
-```
-
-When `--auto` flag is passed, set `execution.mode = "auto"` and `execution.report = "workflow_docs/reports/{feature-slug}-report.md"`.
-
-When `--parallel` flag is passed, set `execution.parallelMode = true`. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable.
-
-Full schema: see imported `references/state-schema.md`.
 
 ---
 
@@ -199,38 +144,13 @@ Overrides blocking issues and forces progression. Records `force_skipped` in `fe
 ```
 /workflow back specify "reason"
 /workflow back design "reason"
-/workflow back implement "reason"
-/workflow back verify "reason"
 ```
 
 ### Slice-Level Rework
 
 ```
-/workflow back --slice B-2 "boundary values unhandled"
-→ Mark B-2 as needs_rework
-→ phase.current = implement, phase.status = partial_rework
-→ Other completed slices remain intact
+/workflow back --slice B-2 "reason"  →  Mark slice as needs_rework, partial_rework status
 ```
-
-Multiple slices: call `back --slice` repeatedly to mark additional slices as `needs_rework`.
-
-### Rework Cascade (dependency propagation)
-
-When a reworked slice has downstream dependents (via `blockedBy`):
-
-```
-A-1 ← A-2 ← D-1 (dependency chain)
-
-/workflow back --slice A-1 "model restructure needed"
-→ A-1: needs_rework
-→ A-2: needs_rework (depends on A-1, auto-propagated)
-→ D-1: needs_rework (depends on A-2, auto-propagated)
-→ B-1, C-1: completed (no dependency on A-1)
-```
-
-- Propagated slices get `reworkReason: "upstream slice {ID} reworked"`
-- Rework executes in dependency order (A-1 → A-2 → D-1)
-- If downstream slice tests still pass after upstream rework, restore to `completed` without code changes
 
 ### Common Processing
 
@@ -240,16 +160,7 @@ A-1 ← A-2 ← D-1 (dependency chain)
 4. Transition to target: `current = target`, `status = in_progress`, `draftCount = 0`
 5. Invoke target phase skill via Skill tool
 
-### Target Mapping
-
-| Current Phase | back (no args) | specify | design | implement | verify |
-|---------------|----------------|---------|--------|-----------|--------|
-| design | specify | specify | — | — | — |
-| implement | design | specify | design | — | — |
-| verify | implement | specify | design | implement | — |
-| ship | verify | specify | design | implement | verify |
-
-`—` = current or future phase (not allowed).
+For rework cascade logic, dependency propagation, and target mapping table, read `references/back-navigation.md`.
 
 ---
 
@@ -294,9 +205,7 @@ Toggle parallel slice execution for the Implement phase. User-explicit only — 
 
 - Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable
 - Only affects Implement phase (other phases unchanged)
-- Can be toggled before entering Implement phase
-- When enabled, independent slices (no `blockedBy` overlap) execute in parallel on a shared working copy
-- Lead manages test execution via test lock protocol (one test suite runs at a time)
+- When enabled, independent slices execute in parallel on a shared working copy
 - See `workflow-implement` SKILL.md §Parallel Execution for full details
 
 ---
@@ -343,7 +252,7 @@ Gear 1 entries show `direct` instead of a phase status.
 | 4 | verify | `/workflow-verify` | `workflow-ship` | None (results in state.json) |
 | 5 | ship | `/workflow-ship` | — | CLAUDE.md update + archive |
 
-Suggestions file (`workflow_docs/suggestions/{feature-slug}.md`) is created during review phases (specify/design/verify) when non-blocking items are found. It persists in git across workflow completion.
+Suggestions file (`workflow_docs/suggestions/{feature-slug}.md`) is created during review phases (specify/design/verify) when non-blocking items are found.
 
 ## Phase Status Values
 
@@ -365,144 +274,6 @@ Suggestions file (`workflow_docs/suggestions/{feature-slug}.md`) is created duri
   B) /workflow back (re-examine previous phase)
   C) /workflow abort (reduce scope and restart)
 ```
-
-## Gear Comparison
-
-| Aspect | Gear 2 | Gear 3 |
-|--------|--------|--------|
-| Human gate | None (AI auto-approves) | Required (human sign-off) |
-| ADR | Only when applicable | Mandatory |
-| Viewpoints | Context-relevant only | Full catalog |
-| Design-Specify round-trips | Max 3 | Max 3 |
-
-## Auto Mode
-
-When started with `--auto`, the workflow runs from the current phase through Ship without waiting for user input. The user receives a comprehensive report at the end.
-
-### Behavior Changes in Auto Mode
-
-| Aspect | Manual Mode | Auto Mode |
-|--------|-------------|-----------|
-| Phase transition | `/workflow next` required | `approved` → auto-advance |
-| Transition confirmation | "Proceed? [Y/n]" prompt | Skipped |
-| `needs_revision` | Fix → wait for `/workflow next` | Fix → auto re-review |
-| Design CP1 | User confirms direction | AI self-verifies and proceeds |
-| Gear 3 human gate | User approval required | Skipped (AI review only) |
-| `draftCount` soft warning (=3) | Warning message | Logged, continues |
-| Escalation back target | User selects | AI analyzes and selects |
-| Non-blocking issues | User decides `--force` | Auto-force, logged in report |
-| Output | Real-time per step | Comprehensive report on completion |
-
-### Hard Limits
-
-Auto mode runs until completion **or** until a hard limit is violated. On violation, the workflow **halts immediately** and requests user feedback.
-
-```
-Hard Limit                         Default    On Violation
-─────────────────────────────────────────────────────────
-phaseMaxDraft (per phase)          5          Halt: "Phase {X} exceeded {N} drafts"
-totalBackCount (entire workflow)   3          Halt: "Workflow exceeded {N} back navigations"
-samePhaseBackCount (to same phase) 2          Halt: "Returned to {X} {N} times"
-designSpecMaxIterations            3          Halt: "Design↔Specify loop exceeded {N}"
-```
-
-### Halt Behavior
-
-When a hard limit is hit:
-
-1. Set `execution.halted = true` and `execution.haltReason = "{description}"`
-2. Write progress so far to the report file
-3. Output halt message with context:
-
-```
-[workflow] AUTO MODE HALTED
-Reason: Phase "design" exceeded 5 draft revisions.
-Current state: design — needs_revision (draft #5)
-
-Progress so far has been written to:
-  workflow_docs/reports/{feature-slug}-report.md
-
-Options:
-  A) Fix the issue and run /workflow next --auto to resume auto mode
-  B) /workflow next to continue in manual mode
-  C) /workflow back [target] to re-examine a previous phase
-  D) /workflow abort to terminate
-```
-
-### Resuming After Halt
-
-- `/workflow next --auto`: Resume auto mode (hard limit counters are NOT reset)
-- `/workflow next`: Continue in manual mode (switches `execution.mode = "manual"`)
-- User can also adjust limits: `/workflow limits phaseMaxDraft 7`
-
-### Auto-Mode Report
-
-Generated at `workflow_docs/reports/{feature-slug}-report.md`. Written incrementally — each phase appends its section on completion. Also written on halt.
-
-```markdown
-# Workflow Report: {Feature Name}
-<!-- mode: auto | gear: {N} | status: {completed|halted} -->
-
-## Summary
-- **Feature**: {name}
-- **Gear**: {N}
-- **Result**: completed | halted at {phase} ({reason})
-- **Total drafts**: {sum across phases}
-- **Back navigations**: {count}
-- **Force-skipped issues**: {count}
-
-## Specify — approved (draft #{N})
-### Auto-Gate
-{pass/fail summary}
-### Viewpoint Review
-{active viewpoints, issues found, resolution}
-### Force-Skipped
-{list of non-blocking issues skipped, or "None"}
-
-## Design — approved (draft #{N})
-### CP1: Approach (auto-approved)
-{approach summary + rationale}
-### Auto-Gate
-{pass/fail summary}
-### Viewpoint Review
-{active viewpoints, issues found, resolution}
-### Force-Skipped
-{list or "None"}
-
-## Implement — approved (draft #{N})
-### Slice Progress
-{slice completion table}
-### Auto-Gate
-{test/lint/type results}
-### Escalations
-{back navigations during implement, or "None"}
-
-## Verify — approved (draft #{N})
-### 5-Axis Review
-| Axis | Result | Issues |
-{per-axis summary}
-### Minor Fixes Applied
-{list of direct fixes, or "None"}
-### Force-Skipped
-{list or "None"}
-
-## Ship — completed
-### Actions Taken
-{CLAUDE.md update, PR, CI, archive status}
-```
-
-### `/workflow limits`
-
-Override hard limits for the current workflow:
-
-```
-/workflow limits phaseMaxDraft 7
-/workflow limits totalBackCount 5
-```
-
-Recorded in `execution.hardLimits`. Effective immediately.
-
----
 
 ## Concurrency Constraint
 

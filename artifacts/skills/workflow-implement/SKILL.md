@@ -252,6 +252,66 @@ Completed slices are **preserved**. After design re-approval and implement re-en
 
 ---
 
+## Sequential Agent Execution (Default)
+
+When `execution.parallelMode = false` (default), the Lead spawns a `slice-implementer` agent for each slice one at a time. The Lead manages state updates and git commits; the agent focuses purely on TDD.
+
+### Execution Flow
+
+```
+Lead (main session): state management + commits
+
+Slice A-1:
+  1. Lead spawns slice-implementer agent with slice context
+  2. Agent: Red → Green → Refactor → Auto-verify (lint, type check, test)
+  3. Agent returns: {status, files changed, test results}
+  4. Lead: git add + git commit (feat({scope}): {description} [A-1])
+  5. Lead: update state.json (A-1 = completed, commit hash)
+
+Slice A-2:
+  1. Lead spawns slice-implementer agent
+  ... (same cycle)
+
+All slices completed → Lead: integration test (full suite)
+```
+
+### Agent Context
+
+Each agent receives:
+
+```
+You are implementing Slice {ID}: {Name}
+
+## Your Slice
+- Test intent: {from design}
+- Changed files: {file list}
+- Reference patterns: {from context.referencePatterns}
+
+## Rules
+- TDD cycle: Red → Green → Refactor
+- ONLY modify files in your Changed files list
+- Run tests directly (no lock protocol in sequential mode)
+- Do NOT run git add/commit — report completion to Lead
+- Do NOT modify spec, design, or state.json
+- If blocked, report the issue and stop
+```
+
+### Failure Handling
+
+```
+Slice A-1: completed ✓
+Slice B-1: failed (3× same error)
+  → Agent reports: error + suspected cause
+  → Lead presents options to user:
+    A) /workflow back design — re-examine design
+    B) Retry B-1 with adjusted approach
+    C) /workflow abort
+```
+
+Failed slices remain `pending` in state.json. Completed slices are preserved.
+
+---
+
 ## Parallel Execution (Teams-based)
 
 When `execution.parallelMode = true`, independent slices execute in parallel using Teams API on a shared working copy. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
