@@ -9,10 +9,6 @@ description: |
   Activation: gear 3 always active, gear 2 when security-related ACs exist in spec.
 
   Do NOT use for: writing code, spec/design authoring, general code review, test strategy.
-linked-from-skills:
-  - workflow-verify: security
-context: fork
-mergeResult: false
 permissionMode: plan
 memory: project
 disallowedTools:

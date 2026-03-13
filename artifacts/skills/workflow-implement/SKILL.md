@@ -283,13 +283,16 @@ Each agent receives:
 You are implementing Slice {ID}: {Name}
 
 ## Your Slice
-- Test intent: {from design}
-- Changed files: {file list}
+- Slice ID: {id}
+- Design doc: {artifacts.design path}
+- Spec doc: {artifacts.spec path}
 - Reference patterns: {from context.referencePatterns}
 
 ## Rules
 - TDD cycle: Red → Green → Refactor
-- ONLY modify files in your Changed files list
+- Read the design doc and locate your slice's "Test intent" and "Changed files" directly
+- ONLY modify files listed in your slice's Changed files from the design doc
+- Every item in the test intent must map to at least one test — verify before reporting done
 - Run tests directly (no lock protocol in sequential mode)
 - Do NOT run git add/commit — report completion to Lead
 - Do NOT modify spec, design, or state.json
@@ -389,13 +392,16 @@ You are implementing Slice {ID}: {Name}
 You are a Teammate in a parallel implementation team. The Lead manages test execution and git commits.
 
 ## Your Slice
-- Test intent: {from design}
-- Changed files: {file list}
+- Slice ID: {id}
+- Design doc: {artifacts.design path}
+- Spec doc: {artifacts.spec path}
 - Reference patterns: {from context.referencePatterns}
 
 ## Rules
 - TDD cycle: Red → Green → Refactor → request commit
-- ONLY modify files in your Changed files list
+- Read the design doc and locate your slice's "Test intent" and "Changed files" directly
+- ONLY modify files listed in your slice's Changed files from the design doc
+- Every item in the test intent must map to at least one test — verify before reporting done
 - Do NOT modify spec, design, or state.json
 - Do NOT run git add/commit — request commit lock from Lead
 - Do NOT escalate directly — if blocked, report the issue and stop

@@ -9,10 +9,6 @@ description: |
   Runs as a sub-agent in parallel when multiple viewpoints are active.
 
   Do NOT use for: spec authoring, code implementation, test execution.
-linked-from-skills:
-  - workflow-design: review
-context: fork
-mergeResult: false
 permissionMode: plan
 memory: project
 disallowedTools:

@@ -9,10 +9,6 @@ description: |
   In parallel mode: multiple agents concurrently, uses test/commit lock protocols.
 
   Do NOT use for: design, spec, review, or ship tasks.
-linked-from-skills:
-  - workflow-implement: implementer
-context: fork
-mergeResult: false
 permissionMode: default
 memory: project
 model: sonnet
@@ -98,7 +94,8 @@ Never run `git add` or `git commit` directly. The Lead performs all git operatio
 
 ## Rules
 
-- **Scope**: ONLY modify files listed in your slice's `changedFiles`
+- **Design doc**: Read the design doc provided in your context. Locate your slice's "Test intent" and "Changed files" directly from the source.
+- **Scope**: ONLY modify files listed in your slice's `changedFiles` from the design doc
 - **TDD order**: Always Red before Green. Never skip the failing test step.
 - **Minimal code**: Write the minimum code to pass the failing test. No speculative code.
 - **One commit**: 1 slice = 1 commit (atomicity). Never commit directly — Lead commits.
@@ -113,6 +110,7 @@ Run these checks (in parallel mode, each requires test lock):
 - lint (source code files only — skip static assets, templates)
 - type check (source code files only)
 - test (full suite or relevant scope)
+- **test intent coverage**: every item in your slice's test intent must map to at least one test — if any item is uncovered, add the missing test before reporting done
 
 All must pass before reporting completion to Lead.
 

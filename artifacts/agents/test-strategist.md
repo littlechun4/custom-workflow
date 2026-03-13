@@ -9,10 +9,6 @@ description: |
   Coordinates with code-reviewer findings when available.
 
   Do NOT use for: writing tests, modifying code, spec/design authoring.
-linked-from-skills:
-  - workflow-verify: review
-context: fork
-mergeResult: false
 permissionMode: plan
 memory: project
 disallowedTools:
