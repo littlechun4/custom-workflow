@@ -30,6 +30,12 @@ agents:
 
 ## Entry Behavior
 
+### Entry Check
+
+Read `phase.status` from `.workflow/state.json`:
+- `reviewing` / `needs_revision`: Skip directly to [§ Review Process](#review-process). Do not re-run 5-axis review.
+- `in_progress`: Continue to Normal Entry or Partial Re-entry below.
+
 ### Normal Entry (from Implement approved)
 
 1. Load spec from `artifacts.spec`, design from `artifacts.design`

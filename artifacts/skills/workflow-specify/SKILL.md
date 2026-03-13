@@ -30,6 +30,12 @@ agents:
 
 ## Entry Behavior
 
+### Entry Check
+
+Read `phase.status` from `.workflow/state.json`:
+- `reviewing` / `needs_revision`: Skip directly to [§ Review Process](#review-process). Do not re-run interview or draft logic.
+- `in_progress`: Continue to First Entry or Re-entry below.
+
 ### First Entry (artifacts.spec = null)
 
 1. Confirm problem definition with user: "Why is this feature needed?"

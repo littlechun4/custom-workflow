@@ -156,10 +156,9 @@ Operates in 2 steps based on `phase.status`.
 ### Step 1: Review (in_progress / partial_rework → reviewing)
 
 1. Set `phase.status` to `reviewing`
-2. Invoke current phase skill's **review process**:
-   - Auto-gate — structural/format checklist (blocks on failure)
-   - Viewpoint review — qualitative review after auto-gate passes
-   - Human gate — gear 3 only (varies by phase)
+2. Invoke current phase skill via **Skill tool**.
+   The phase skill reads `phase.status = reviewing` and executes its full Review Process.
+   **Do NOT run any review logic inline here.**
 3. Result:
    - Issues found → `needs_revision` → fix instructions
    - No issues + human approval → `approved`

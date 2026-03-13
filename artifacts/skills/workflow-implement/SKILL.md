@@ -29,6 +29,12 @@ agents:
 
 ## Entry Behavior
 
+### Entry Check
+
+Read `phase.status` from `.workflow/state.json`:
+- `reviewing` / `needs_revision`: Skip directly to [§ Review Process](#review-process). Do not re-run TDD cycle.
+- `in_progress` / `partial_rework`: Continue to First Entry or Re-entry below.
+
 ### First Entry (no completed slices)
 
 1. Load design from `artifacts.design` path

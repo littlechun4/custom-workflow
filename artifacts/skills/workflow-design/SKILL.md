@@ -31,6 +31,12 @@ agents:
 
 ## Entry Behavior
 
+### Entry Check
+
+Read `phase.status` from `.workflow/state.json`:
+- `reviewing` / `needs_revision`: Skip directly to [§ Review Process](#review-process). Do not re-run authoring or checkpoint logic.
+- `in_progress`: Continue to First Entry or Re-entry below.
+
 ### First Entry (artifacts.design = null)
 
 1. Load spec from `artifacts.spec` path
