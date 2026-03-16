@@ -148,7 +148,7 @@ Blocking items found. Add AC for R-3, then run /workflow next again.
 
 ### 2. Viewpoint Review (after auto-gate passes)
 
-Each active viewpoint reviews independently. When 2+ are active, dispatch to `spec-reviewer` agent as sub-agent.
+Dispatch to `spec-reviewer` agent. Active viewpoints:
 
 | Viewpoint | Activation Condition | Review Focus |
 |-----------|---------------------|--------------|
@@ -157,20 +157,7 @@ Each active viewpoint reviews independently. When 2+ are active, dispatch to `sp
 | User Scenario | Feature involves UX changes | Empty state, error state, accessibility, flow completeness |
 | Business Alignment | Multiple stakeholders or strategic feature | Product direction, ROI, stakeholder consensus |
 
-**Viewpoint selection flow**:
-1. Activate viewpoints whose trigger conditions match from the catalog above
-2. Gear 2: context-relevant only / Gear 3: full catalog
-3. Each viewpoint classifies issues as blocking / non-blocking
-
-**Viewpoint result output**:
-```
-■ Viewpoint Review (active: Clarity, Technical Feasibility):
-  [!] R-2: "fast response" — no numeric threshold       (blocking)
-  [i] Error scenario (network failure) not specified     (non-blocking)
-
-Blocking issues found. Resolve them, then run /workflow next again.
-Non-blocking issues can be overridden with /workflow next --force.
-```
+Gear 2: context-relevant viewpoints. Gear 3: all viewpoints active.
 
 ### 3. Human Gate (gear 3 only)
 
