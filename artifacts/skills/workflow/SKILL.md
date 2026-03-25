@@ -265,11 +265,22 @@ Gear 1 entries show `direct` instead of a phase status.
 
 Install, configure, or update workflow skills in the current project. Idempotent — safe to run multiple times.
 
+### Bootstrap (before skill is installed)
+
+The setup instructions live inside this SKILL.md, so the skill must be readable before `/workflow setup` can be invoked as a slash command. Bootstrap flow:
+
+1. User adds submodule manually:
+   ```bash
+   git submodule add <repo-url> .vendor/custom-workflow
+   ```
+2. User asks Claude: "Read `.vendor/custom-workflow/artifacts/skills/workflow/SKILL.md` and run the setup section"
+3. Claude reads this file, executes the First Run steps below
+4. After symlinks are created, `/workflow setup` becomes available as a slash command for future management
+
 ### First Run (installation)
 
-1. **Submodule check**: Look for `.vendor/custom-workflow/` (or check `.gitmodules` for existing submodule path)
-   - If missing: prompt for repo URL, then `git submodule add {url} .vendor/custom-workflow`
-   - If exists: report current version
+1. **Submodule check**: Verify `.vendor/custom-workflow/` exists and is populated
+   - If missing or empty: ask user to run `git submodule add <url> .vendor/custom-workflow` and retry
 2. **Directory setup**: Create required directories if missing
    - `.claude/skills/` — skill symlinks
    - `.claude/agents/` — agent symlinks
