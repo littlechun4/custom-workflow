@@ -34,7 +34,7 @@ Load these references on demand — do NOT read them unless the condition applie
 | Reference | When to Read |
 |-----------|-------------|
 | `references/review-protocol.md` | On `/workflow next` (review + transition) |
-| `references/extensions.md` | On `/workflow start` (branch extension) and Ship phase |
+| `references/extensions.md` | On `/workflow setup` and Ship phase (extension behavior reference) |
 | `references/auto-mode.md` | When `execution.mode = "auto"` in state.json |
 | `references/back-navigation.md` | On `/workflow back` (cascade logic + target mapping) |
 
@@ -43,6 +43,7 @@ Load these references on demand — do NOT read them unless the condition applie
 | Command | Purpose |
 |---------|---------|
 | `/workflow start {feature} [--auto] [--parallel]` | Start new workflow (gear detection + state.json creation) |
+| `/workflow setup` | Install/configure workflow skills and extensions |
 | `/workflow next [--force]` | Review current phase → transition to next phase (2-step) |
 | `/workflow back [target] [reason]` | Return to previous/specified phase + record feedback |
 | `/workflow back --slice {id} [reason]` | Rework a specific slice only |
@@ -63,8 +64,26 @@ Load these references on demand — do NOT read them unless the condition applie
      - `a) /workflow resume` — continue existing workflow
      - `b) /workflow abort` — archive existing, then start new
      - `c) /workflow status` — check current state before deciding
-2. Explore codebase to detect gear level
-3. Gear 1 → skip workflow:
+2. **Branch status check** (always runs, before gear detection):
+   - Read `.workflow/config.json` for extension settings
+   - If config.json missing: display `"Run /workflow setup to configure extensions (branch, PR, etc.)"` and continue with all extensions disabled
+   - Run `git branch --show-current` to get current branch
+   - Check if current branch is already merged into base branch (main/develop):
+     `git branch --merged main` or `git branch --merged develop`
+   - Check if working directly on main/develop (warn against this)
+   - **If issues found**: display warning and offer options:
+     ```
+     [workflow] Branch check:
+       Current branch: {branch}
+       ⚠ {issue description}
+       → a) Create new branch: feat/{feature-slug}
+       → b) Continue on current branch
+       → c) Enter custom branch name
+     ```
+   - **If branch extension enabled** and no issues: auto-create `feat/{feature-slug}` branch
+   - **If branch extension disabled** and no issues: display current branch info and continue
+3. Explore codebase to detect gear level
+4. Gear 1 → skip workflow:
    - Create `.workflow/` directory if it doesn't exist
    - Write `.workflow/history/{slug}.json`:
      ```json
@@ -78,7 +97,7 @@ Load these references on demand — do NOT read them unless the condition applie
      }
      ```
    - Advise "Implement directly" and exit
-4. Gear 2-3:
+5. Gear 2-3:
    - Create `.workflow/` directory
    - Initialize `state.json` per `references/state-schema.md`. Key overrides: `--auto` sets `execution.mode = "auto"` and `execution.report = "workflow_docs/reports/{feature-slug}-report.md"`, `--parallel` sets `execution.parallelMode = true`.
    - Invoke `/workflow-specify` via Skill tool
@@ -239,6 +258,90 @@ List JSON files in `.workflow/history/`:
 ```
 
 Gear 1 entries show `direct` instead of a phase status.
+
+---
+
+## /workflow setup
+
+Install, configure, or update workflow skills in the current project. Idempotent — safe to run multiple times.
+
+### First Run (installation)
+
+1. **Submodule check**: Look for `.vendor/custom-workflow/` (or check `.gitmodules` for existing submodule path)
+   - If missing: prompt for repo URL, then `git submodule add {url} .vendor/custom-workflow`
+   - If exists: report current version
+2. **Directory setup**: Create required directories if missing
+   - `.claude/skills/` — skill symlinks
+   - `.claude/agents/` — agent symlinks
+   - `.workflow/` — config and state
+3. **Create symlinks**: Link 6 skill directories
+   ```
+   .claude/skills/workflow          → .vendor/custom-workflow/artifacts/skills/workflow
+   .claude/skills/workflow-specify  → .vendor/custom-workflow/artifacts/skills/workflow-specify
+   .claude/skills/workflow-design   → .vendor/custom-workflow/artifacts/skills/workflow-design
+   .claude/skills/workflow-implement → .vendor/custom-workflow/artifacts/skills/workflow-implement
+   .claude/skills/workflow-verify   → .vendor/custom-workflow/artifacts/skills/workflow-verify
+   .claude/skills/workflow-ship     → .vendor/custom-workflow/artifacts/skills/workflow-ship
+   ```
+4. **Link agents**: Create symlinks in `.claude/agents/`
+   ```
+   .claude/agents/spec-reviewer.md    → .vendor/custom-workflow/artifacts/agents/spec-reviewer.md
+   .claude/agents/design-reviewer.md  → .vendor/custom-workflow/artifacts/agents/design-reviewer.md
+   .claude/agents/code-reviewer.md    → .vendor/custom-workflow/artifacts/agents/code-reviewer.md
+   .claude/agents/test-strategist.md  → .vendor/custom-workflow/artifacts/agents/test-strategist.md
+   ```
+5. **Optional skills** (interactive):
+   ```
+   [workflow] Optional skills:
+     resolve-pr-review (triage & resolve PR review comments): [Y/n]
+   ```
+   If accepted, create additional symlink:
+   ```
+   .claude/skills/resolve-pr-review → .vendor/custom-workflow/artifacts/skills/resolve-pr-review
+   ```
+6. **Extension configuration** (interactive):
+   ```
+   [workflow] Configure extensions:
+     Branch creation (auto-create feat/{slug} branch): [Y/n]
+     PR creation (gh pr create in Ship phase): [Y/n]
+     PR auto-merge (squash merge + branch cleanup): [y/N]
+     CI check (wait for CI after PR): [y/N]
+
+   → Writing .workflow/config.json
+   ```
+7. **Verification**: Check all symlinks resolve, report status
+
+### Subsequent Runs (management)
+
+When already installed, display current status and offer options:
+
+```
+[workflow] Setup — installed
+  Submodule: .vendor/custom-workflow
+  Skills: 6/6 linked ✓
+  Agents: 4/4 linked ✓
+
+  Current extensions:
+    Branch creation: enabled
+    PR creation: enabled
+    PR auto-merge: disabled
+    CI check: disabled
+
+  Config: .workflow/config.json
+
+  Options:
+    a) Change extension settings
+    b) Update submodule (git submodule update --remote)
+    c) Re-link (fix broken symlinks)
+    d) Done
+```
+
+### Flags
+
+| Flag | Purpose |
+|------|---------|
+| `--extensions` | Jump directly to extension configuration |
+| `--update` | Update submodule to latest and re-verify links |
 
 ---
 

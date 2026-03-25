@@ -3,7 +3,7 @@ name: workflow-ship
 description: |
   Workflow Ship Phase. Wraps up and delivers.
   Updates CLAUDE.md with learned patterns, archives state.json,
-  and optionally creates PR / checks CI / syncs issue tracker.
+  and optionally creates PR / checks CI.
 
   Auto-invoked by the workflow orchestrator when entering the Ship phase.
   Runs to completion automatically — no /workflow next required.
@@ -48,11 +48,10 @@ When returning after CI/PR failure → fix → Verify re-approval → Ship re-en
   │
   ├─ 1. Update CLAUDE.md (learned patterns)
   ├─ 2. Convert suggestions to issues (if suggestions file exists)
-  ├─ 3. (Extension: PR) Create or update PR
+  ├─ 3. (Extension: PR) Create or update PR — or output manual integration guidance
   ├─ 4. (Extension: CI) Verify CI passes
   ├─ 5. (Extension: PR Auto-Merge) Merge PR + delete branches
-  ├─ 6. (Extension: Issue Tracker) Transition issue status
-  ├─ 7. Archive state.json → .workflow/history/{slug}.json + delete active state
+  ├─ 6. Archive state.json → .workflow/history/{slug}.json + delete active state
   │
   └─ Workflow complete
 ```
@@ -79,8 +78,8 @@ Record patterns learned during this workflow:
 
 Check if `workflow_docs/suggestions/{slug}.md` exists.
 
-- **If file exists**: Present each suggestion to the user and ask whether to create an issue tracker ticket (GitHub Issue/Linear).
-  - User approves → create ticket via issue tracker extension (if active) or note for manual creation
+- **If file exists**: Present each suggestion to the user and ask whether to create a tracking issue (GitHub Issue, etc.).
+  - User approves → create issue via `gh issue create` or note for manual creation
   - User declines → suggestion remains in the file for future reference only
 - **If file does not exist**: Skip this step.
 
@@ -88,9 +87,7 @@ The suggestions file is **never deleted** — it stays in git as a record of rev
 
 ### Step 3: (Extension) Create PR
 
-Skip if PR extension is not active.
-
-When active:
+**When active:**
 ```bash
 gh pr create \
   --title "feat: {feature-name}" \
@@ -116,6 +113,20 @@ EOF
 - Record PR URL in `state.json` → `feature.pr`
 - On re-entry: `gh pr edit` to update existing PR (no new PR)
 - Based on `gh` (GitHub CLI). Other platforms (GitLab `glab`, etc.) use the same extension point
+
+**When inactive** — output manual integration guidance:
+```
+[workflow] ⚠ PR extension is not active. Manual integration needed:
+  Current branch: {current-branch}
+  Base branch: {base-branch}
+  Commits: {N} commits ahead of {base-branch}
+
+  Suggested steps:
+    git push origin {current-branch}
+    gh pr create --base {base-branch}
+
+  To enable automatic PR creation: /workflow setup --extensions
+```
 
 ### Step 4: (Extension) Verify CI
 
@@ -151,18 +162,7 @@ git branch -d {feature-branch}
 - On failure: do NOT retry automatically. Report the error and let the user decide.
 - If PR has unresolved review comments, `gh pr merge` will fail — this is expected. Report and wait for user action.
 
-### Step 6: (Extension) Issue Tracker Sync
-
-| Workflow Event | Issue Transition |
-|----------------|-----------------|
-| Ship phase (PR active, auto-merge inactive) | In Progress → In Review |
-| Ship phase (PR active, auto-merge active) | In Progress → Done (after merge) |
-| Ship phase (PR inactive) | In Progress → Done |
-| After manual PR merge | In Review → Done |
-
-When PR auto-merge is active, the issue transitions directly to Done since the PR is merged within Ship. When PR extension is inactive, skip "In Review" and transition directly to Done.
-
-### Step 7: Archive state.json
+### Step 6: Archive state.json
 
 ```
 .workflow/state.json → .workflow/history/{slug}.json
@@ -171,7 +171,7 @@ When PR auto-merge is active, the issue transitions directly to Done since the P
 - Preserves complete workflow history
 - Available for reference when implementing similar features
 - **Only after all processes (core + extensions) succeed**
-- After deletion, ready for next `/workflow start`
+- After archiving, ready for next `/workflow start`
 
 ---
 
@@ -215,16 +215,15 @@ Ship entry → PR created → CI runs
 
 ## Extension Activation
 
-Extensions are configured in the project's CLAUDE.md or extensions reference:
+Extensions are configured in `.workflow/config.json` (created by `/workflow setup`):
 
 | Extension | Default | Description |
 |-----------|---------|-------------|
-| PR Creation | Inactive | Run `gh pr create` in Ship |
+| PR Creation | **Active** | Run `gh pr create` in Ship |
 | PR Auto-Merge | Inactive | Merge PR + delete branches after CI passes |
 | CI Check | Inactive | Wait for CI pass after PR |
-| Issue Tracker | Inactive | Transition issue status (Linear/GitHub Issues) |
 
-When all extensions are inactive, Ship completes with CLAUDE.md update + archive only.
+When PR extension is inactive, Ship outputs manual integration guidance before archiving (see Step 3).
 
 ---
 

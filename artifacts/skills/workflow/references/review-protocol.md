@@ -177,7 +177,7 @@ workflow_docs/suggestions/{feature-slug}.md
 - **Append only** — each phase adds a new `## {Phase} review` section; never modify previous sections
 - **Phase skill responsibility** — reviewer agents produce `[i]` items in output; the invoking phase skill writes them to the file
 - **Skip when empty** — if no non-blocking items, do not create or update the file
-- **Ship phase** — optionally converts remaining suggestions to issue tracker tickets (see workflow-ship)
+- **Ship phase** — optionally converts remaining suggestions to tracking issues (see workflow-ship)
 
 ---
 

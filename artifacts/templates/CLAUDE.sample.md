@@ -3,14 +3,12 @@
 ## Workflow Settings
 
 This project uses the structured development workflow (`/workflow`).
+After cloning, run `git submodule update --init` to populate `.vendor/custom-workflow`.
 
-### Extension Settings
+### Extensions
 
-<!-- Uncomment to enable. Ship phase reads these settings. -->
-<!-- - Branch creation: enabled -->
-<!-- - PR creation: enabled -->
-<!-- - CI check: enabled -->
-<!-- - Issue tracker: enabled -->
+<!-- Extension settings are in .workflow/config.json (created by /workflow setup). -->
+<!-- Run /workflow setup --extensions to change. -->
 
 ### Source Directories
 

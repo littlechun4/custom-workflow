@@ -54,6 +54,7 @@
 | `/workflow history` | 완료된 워크플로우 목록 표시 |
 | `/workflow limits {key} {value}` | 자동 모드 hard limit 변경 |
 | `/workflow parallel [on\|off]` | Implement 페이즈 병렬 실행 토글 |
+| `/workflow setup` | 스킬 설치/설정 관리 (submodule, symlink, extension 설정) |
 
 ---
 
@@ -255,13 +256,14 @@ workflow_docs/spec/
 **프로세스**:
 ```
 1. CLAUDE.md 업데이트 — 발견된 패턴, 기술 결정, 주의사항 기록
-2. (확장) PR 생성 — gh pr create로 요약 + 문서 포함
-3. (확장) CI 확인 — 통과/실패까지 폴링
-4. (확장) 이슈 트래커 — 상태 전환 (In Progress → Done)
-5. 아카이브 — state.json을 .workflow/history/로 이동
+2. 제안 사항 변환 — 비차단 리뷰 항목을 이슈로 전환 (선택적)
+3. (확장) PR 생성 — gh pr create로 요약 + 문서 포함 (기본 활성)
+4. (확장) CI 확인 — 통과/실패까지 폴링
+5. (확장) PR 자동 병합 — squash merge + 브랜치 정리
+6. 아카이브 — state.json을 .workflow/history/로 이동
 ```
 
-**확장 기능**은 기본적으로 모두 비활성화. CLAUDE.md 또는 `.claude/settings.json`에서 설정.
+**확장 기능**: `.workflow/config.json`으로 관리 (`/workflow setup`으로 생성). config 없으면 전부 비활성. setup 기본값: Branch/PR 활성, CI/자동 병합 비활성.
 
 **CI 실패 복구**: 적절한 페이즈로 복귀 (테스트 실패 → Implement, 린트 → Implement, 타입 → Design)
 
