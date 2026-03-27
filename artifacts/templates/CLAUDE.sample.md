@@ -49,8 +49,3 @@ After cloning, run `git submodule update --init` to populate `.vendor/custom-wor
      - Mock external services via src/test-utils/mocks.ts
 -->
 
-## Workflow Learned Patterns
-
-<!-- This section is updated automatically by the Ship phase.
-     Each completed workflow records useful patterns here.
-     Do not remove existing entries. -->

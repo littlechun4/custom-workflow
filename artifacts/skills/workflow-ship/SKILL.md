@@ -46,7 +46,7 @@ When returning after CI/PR failure → fix → Verify re-approval → Ship re-en
 ```
 [Verify approved] ──[/workflow next]──→ Ship entry
   │
-  ├─ 1. Update CLAUDE.md (learned patterns)
+  ├─ 1. Capture insights (optional)
   ├─ 2. Convert suggestions to issues (if suggestions file exists)
   ├─ 3. (Extension: PR) Create or update PR — or output manual integration guidance
   ├─ 4. (Extension: CI) Verify CI passes
@@ -60,19 +60,31 @@ When returning after CI/PR failure → fix → Verify re-approval → Ship re-en
 
 ---
 
-### Step 1: Update CLAUDE.md
+### Step 1: Capture Insights
 
-Record patterns learned during this workflow:
+Review the workflow for non-obvious discoveries — things that **cannot be inferred by reading the code**. Add them to `state.json` → `insights` array before archiving.
 
-- Newly discovered codebase patterns (usable as reference patterns)
-- Technical decisions made (link to ADR if exists)
-- Gotchas and pitfalls (for future reference)
+**What qualifies:**
+- Gotchas and pitfalls (e.g., "advisory lock doesn't release on transaction end")
+- Non-obvious API/library behaviors discovered during implementation
+- Workarounds for known issues (e.g., "Chart.js responsive:true triggers ResizeObserver bug")
 
-**Recording criterion:**
-> "Would this be useful to know when implementing a similar feature next time?"
-> → Yes: record. → No: skip.
+**What does NOT qualify:**
+- Architecture decisions (already in ADR or design doc)
+- Code patterns (readable from the code itself)
+- Configuration details (in config files)
+- General best practices
 
-**Format**: Add a section or entries under the appropriate existing section in CLAUDE.md. Keep entries concise. Do not duplicate information already present.
+```json
+"insights": [
+  "PostgreSQL advisory lock은 트랜잭션 끝나도 안 풀림 — 명시적 unlock 필요",
+  "dlt merge 시 staging 테이블 스키마가 갱신 안 되면 NOT NULL 에러 발생"
+]
+```
+
+If nothing qualifies, leave the array empty. **Do not force insights where there are none.**
+
+These insights are surfaced by `/workflow start` when it scans history for relevant past work.
 
 ### Step 2: Convert Suggestions to Issues
 

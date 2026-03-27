@@ -16,6 +16,8 @@
   "slices": [ ... ],
   "feedback": [ ... ],
   "context": { ... },
+  "insights": [ ... ],
+  "execution": { ... },
   "meta": { ... }
 }
 ```
@@ -211,6 +213,25 @@
 |-------|------|-------------|
 | `loadOnResume` | array | File paths to auto-load on `/workflow resume` |
 | `referencePatterns` | array | Reference pattern files discovered during Design. Used to maintain code consistency during Implement |
+
+---
+
+## insights
+
+```json
+"insights": [
+  "PostgreSQL advisory lock은 트랜잭션 끝나도 안 풀림 — 명시적 unlock 필요",
+  "dlt merge 시 staging 테이블 스키마가 갱신 안 되면 NOT NULL 에러 발생"
+]
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `insights` | array | Non-obvious discoveries from this workflow. Populated during Ship phase. Empty array if nothing qualifies |
+
+**Criteria**: Only things that cannot be inferred by reading the code — gotchas, non-obvious API behaviors, workarounds. Not architecture decisions, code patterns, or configuration.
+
+**Surfaced on**: `/workflow start` scans `.workflow/history/*.json` for insights from past workflows that may be relevant to the new feature.
 
 ---
 

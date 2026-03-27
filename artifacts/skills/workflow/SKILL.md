@@ -82,8 +82,15 @@ Load these references on demand — do NOT read them unless the condition applie
      ```
    - **If branch extension enabled** and no issues: auto-create `feat/{feature-slug}` branch
    - **If branch extension disabled** and no issues: display current branch info and continue
-3. Explore codebase to detect gear level
-4. Gear 1 → skip workflow:
+3. **Scan past insights**: If `.workflow/history/` exists, scan history files for `insights` arrays. Display any that may be relevant to the new feature:
+   ```
+   [workflow] Relevant insights from past workflows:
+     • (audit-log-detail-view) PostgreSQL advisory lock은 트랜잭션 끝나도 안 풀림
+     • (pethroom-friends-metric) dlt merge 시 staging 테이블 스키마 주의
+   ```
+   If no relevant insights, skip silently.
+4. Explore codebase to detect gear level
+5. Gear 1 → skip workflow:
    - Create `.workflow/` directory if it doesn't exist
    - Write `.workflow/history/{slug}.json`:
      ```json
@@ -97,7 +104,7 @@ Load these references on demand — do NOT read them unless the condition applie
      }
      ```
    - Advise "Implement directly" and exit
-5. Gear 2-3:
+6. Gear 2-3:
    - Create `.workflow/` directory
    - Initialize `state.json` per `references/state-schema.md`. Key overrides: `--auto` sets `execution.mode = "auto"` and `execution.report = "workflow_docs/reports/{feature-slug}-report.md"`, `--parallel` sets `execution.parallelMode = true`.
    - Invoke `/workflow-specify` via Skill tool
