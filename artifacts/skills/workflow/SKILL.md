@@ -54,6 +54,7 @@ Load these references on demand — do NOT read them unless the condition applie
 | `/workflow resume` | Restore session (state.json + artifact loading) |
 | `/workflow history` | List completed/aborted workflows |
 | `/workflow limits {key} {value}` | Override hard limits for auto mode |
+| `/workflow done` | Complete Gear 1 workflow (brief → implement → ship-lite) |
 
 ---
 
@@ -90,20 +91,40 @@ Load these references on demand — do NOT read them unless the condition applie
    ```
    If no relevant insights, skip silently.
 4. Explore codebase to detect gear level
-5. Gear 1 → skip workflow:
+5. Gear 1 → lightweight workflow:
    - Create `.workflow/` directory if it doesn't exist
-   - Write `.workflow/history/{slug}.json`:
+   - (Extension) Create branch if branch extension enabled
+   - Write brief document `workflow_docs/brief/{feature-slug}.md`:
+     ```markdown
+     # {Feature Name}
+
+     ## What
+     {1-2 sentence description}
+
+     ## Why
+     {Background/motivation}
+
+     ## Approach
+     {How to implement — key decisions, approach summary}
+
+     ## Changes
+     - `path/to/file` — {what changes}
+     - `path/to/file` — {what changes}
+     ```
+   - Write `.workflow/state.json` (minimal):
      ```json
      {
-       "feature": "{feature}",
-       "slug": "{feature-slug}",
-       "gear": 1,
-       "type": "direct",
-       "gearReason": "{detection rationale}",
-       "completedAt": "{ISO8601}"
+       "$schema": "workflow-state-v1",
+       "feature": { "name": "{feature}", "slug": "{slug}", "branch": "{branch|null}" },
+       "gear": { "detected": 1, "override": null, "reason": "{rationale}" },
+       "phase": { "current": "implement", "status": "in_progress" },
+       "artifacts": { "brief": "workflow_docs/brief/{slug}.md" },
+       "insights": [],
+       "meta": { "createdAt": "{ISO8601}", "workflowVersion": "1.0" }
      }
      ```
-   - Advise "Implement directly" and exit
+   - Implement directly. Commits are made freely during implementation.
+   - On completion: run `/workflow done` to wrap up
 6. Gear 2-3:
    - Create `.workflow/` directory
    - Initialize `state.json` per `references/state-schema.md`. Key overrides: `--auto` sets `execution.mode = "auto"` and `execution.report = "workflow_docs/reports/{feature-slug}-report.md"`, `--parallel` sets `execution.parallelMode = true`.
@@ -264,7 +285,42 @@ List JSON files in `.workflow/history/`:
   3. auth-refactor (gear 2, aborted: "scope too large", 2026-03-03)
 ```
 
-Gear 1 entries show `direct` instead of a phase status.
+Gear 1 entries show `completed` with gear 1.
+
+---
+
+## /workflow done
+
+Complete a Gear 1 workflow. Only valid when `gear.detected = 1` (or `gear.override = 1`).
+
+1. **Collect changes**: Run `git log` to find commits since workflow started (compare against `meta.createdAt`)
+2. **Update brief**: Add actual changes to the brief document if they differ from the plan
+3. **Capture insights**: Same criteria as Ship Step 1 — non-obvious gotchas only. Add to `insights` array
+4. **Summary**: Record in `state.json`:
+   ```json
+   {
+     "summary": "{1-2 sentence summary of what was done}",
+     "commits": ["abc1234", "def5678"],
+     "changedFiles": ["path/to/file1", "path/to/file2"]
+   }
+   ```
+5. **(Extension) PR**: If PR extension enabled, create PR. If disabled, show manual integration guidance (same as Ship)
+6. **Archive**: `state.json` → `.workflow/history/{slug}.json`
+
+```
+[workflow] Done — {feature-name} (gear 1)
+  Brief: workflow_docs/brief/{slug}.md
+  Commits: 3
+  Changed files: 4
+
+  ⚠ PR extension is not active.
+    git push origin {branch}
+    gh pr create --base main
+
+  Archived → .workflow/history/{slug}.json
+```
+
+If the user runs `/workflow done` on a Gear 2-3 workflow, reject: "Use `/workflow next` to progress through phases."
 
 ---
 
