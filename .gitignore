@@ -8,4 +8,4 @@
 # Track root-level files
 !.gitignore
 !README.md
-!setup.sh
+!SETUP.md

@@ -23,10 +23,10 @@ git submodule add git@github.com:littlechun4/custom-workflow.git .vendor/custom-
 ### 2. Claude에게 설치 요청
 
 ```
-.vendor/custom-workflow/artifacts/skills/workflow/SKILL.md의 setup 섹션을 읽고 실행해줘
+.vendor/custom-workflow 설치해줘
 ```
 
-Claude가 프로젝트 구조를 파악하고 다음을 수행합니다:
+Claude가 `SETUP.md`를 읽고 프로젝트 구조에 맞게 설치합니다:
 - `.claude/skills/` 에 워크플로우 스킬 심볼릭 링크 생성 (6개)
 - `.claude/agents/` 에 에이전트 심볼릭 링크 생성 (4개)
 - 선택적 스킬 (resolve-pr-review) 설치 여부 확인

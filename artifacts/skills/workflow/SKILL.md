@@ -263,68 +263,11 @@ Gear 1 entries show `direct` instead of a phase status.
 
 ## /workflow setup
 
-Install, configure, or update workflow skills in the current project. Idempotent — safe to run multiple times.
+Manage workflow installation settings. For **initial installation**, see `SETUP.md` at the submodule root.
 
-### Bootstrap (before skill is installed)
+### Usage
 
-The setup instructions live inside this SKILL.md, so the skill must be readable before `/workflow setup` can be invoked as a slash command. Bootstrap flow:
-
-1. User adds submodule manually:
-   ```bash
-   git submodule add <repo-url> .vendor/custom-workflow
-   ```
-2. User asks Claude: "Read `.vendor/custom-workflow/artifacts/skills/workflow/SKILL.md` and run the setup section"
-3. Claude reads this file, executes the First Run steps below
-4. After symlinks are created, `/workflow setup` becomes available as a slash command for future management
-
-### First Run (installation)
-
-1. **Submodule check**: Verify `.vendor/custom-workflow/` exists and is populated
-   - If missing or empty: ask user to run `git submodule add <url> .vendor/custom-workflow` and retry
-2. **Directory setup**: Create required directories if missing
-   - `.claude/skills/` — skill symlinks
-   - `.claude/agents/` — agent symlinks
-   - `.workflow/` — config and state
-3. **Create symlinks**: Link 6 skill directories
-   ```
-   .claude/skills/workflow          → .vendor/custom-workflow/artifacts/skills/workflow
-   .claude/skills/workflow-specify  → .vendor/custom-workflow/artifacts/skills/workflow-specify
-   .claude/skills/workflow-design   → .vendor/custom-workflow/artifacts/skills/workflow-design
-   .claude/skills/workflow-implement → .vendor/custom-workflow/artifacts/skills/workflow-implement
-   .claude/skills/workflow-verify   → .vendor/custom-workflow/artifacts/skills/workflow-verify
-   .claude/skills/workflow-ship     → .vendor/custom-workflow/artifacts/skills/workflow-ship
-   ```
-4. **Link agents**: Create symlinks in `.claude/agents/`
-   ```
-   .claude/agents/spec-reviewer.md    → .vendor/custom-workflow/artifacts/agents/spec-reviewer.md
-   .claude/agents/design-reviewer.md  → .vendor/custom-workflow/artifacts/agents/design-reviewer.md
-   .claude/agents/code-reviewer.md    → .vendor/custom-workflow/artifacts/agents/code-reviewer.md
-   .claude/agents/test-strategist.md  → .vendor/custom-workflow/artifacts/agents/test-strategist.md
-   ```
-5. **Optional skills** (interactive):
-   ```
-   [workflow] Optional skills:
-     resolve-pr-review (triage & resolve PR review comments): [Y/n]
-   ```
-   If accepted, create additional symlink:
-   ```
-   .claude/skills/resolve-pr-review → .vendor/custom-workflow/artifacts/skills/resolve-pr-review
-   ```
-6. **Extension configuration** (interactive):
-   ```
-   [workflow] Configure extensions:
-     Branch creation (auto-create feat/{slug} branch): [Y/n]
-     PR creation (gh pr create in Ship phase): [Y/n]
-     PR auto-merge (squash merge + branch cleanup): [y/N]
-     CI check (wait for CI after PR): [y/N]
-
-   → Writing .workflow/config.json
-   ```
-7. **Verification**: Check all symlinks resolve, report status
-
-### Subsequent Runs (management)
-
-When already installed, display current status and offer options:
+Display current status and offer options:
 
 ```
 [workflow] Setup — installed

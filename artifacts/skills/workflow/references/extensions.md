@@ -39,7 +39,7 @@ Extensions are configured in `.workflow/config.json`. The `/workflow setup` comm
 }
 ```
 
-- Created by `/workflow setup` (step 5)
+- Created during initial setup (see `SETUP.md` at submodule root) or `/workflow setup --extensions`
 - Persists across workflows (not archived with state.json)
 - Can be committed to git for team-wide consistency
 
