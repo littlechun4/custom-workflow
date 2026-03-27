@@ -37,8 +37,9 @@
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | string | Feature name provided at `/workflow start` |
+| `name` | string | Work item name provided at `/workflow start` |
 | `slug` | string | kebab-case conversion (used for archive filenames) |
+| `type` | string | Work type: `feat`, `fix`, `refactor`, `docs`, `chore`, etc. Inferred from description |
 | `branch` | string \| null | Recorded when branch extension is enabled. Default null |
 | `pr` | string \| null | PR URL recorded during Ship phase |
 

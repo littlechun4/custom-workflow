@@ -102,7 +102,7 @@ The suggestions file is **never deleted** — it stays in git as a record of rev
 **When active:**
 ```bash
 gh pr create \
-  --title "feat: {feature-name}" \
+  --title "{type}: {feature-name}" \
   --body "$(cat <<'EOF'
 ## Summary
 {Spec summary — 1-3 sentences}

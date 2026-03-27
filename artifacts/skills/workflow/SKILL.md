@@ -77,11 +77,11 @@ Load these references on demand — do NOT read them unless the condition applie
      [workflow] Branch check:
        Current branch: {branch}
        ⚠ {issue description}
-       → a) Create new branch: feat/{feature-slug}
+       → a) Create new branch: {type}/{feature-slug}
        → b) Continue on current branch
        → c) Enter custom branch name
      ```
-   - **If branch extension enabled** and no issues: auto-create `feat/{feature-slug}` branch
+   - **If branch extension enabled** and no issues: auto-create `{type}/{feature-slug}` branch
    - **If branch extension disabled** and no issues: display current branch info and continue
 3. **Scan past insights**: If `.workflow/history/` exists, scan history files for `insights` arrays. Display any that may be relevant to the new feature:
    ```

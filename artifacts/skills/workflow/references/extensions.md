@@ -50,8 +50,10 @@ Extensions are configured in `.workflow/config.json`. The `/workflow setup` comm
 Runs at `/workflow start`.
 
 ```bash
-git checkout -b feat/{feature-slug}
+git checkout -b {type}/{feature-slug}
 ```
+
+Where `{type}` is inferred from the work description: `feat`, `fix`, `refactor`, `docs`, `chore`, etc. (follows conventional commit prefixes).
 
 - Records branch name in `state.json` → `feature.branch`
 - If branch already exists, checkout only (no new branch)
@@ -70,7 +72,7 @@ On `/workflow start`, the orchestrator always checks:
   Current branch: feature/audit-log-coverage
   ⚠ This branch is already merged into main.
   → Create a new branch? [Y/n]
-  → Branch name: feat/{feature-slug} (or custom)
+  → Branch name: {type}/{feature-slug} (or custom)
 ```
 
 When branch extension is disabled and no issues detected:
@@ -87,7 +89,7 @@ First extension step of Ship Phase.
 
 ```bash
 gh pr create \
-  --title "feat: {feature-name}" \
+  --title "{type}: {feature-name}" \
   --body "$(cat <<'EOF'
 ## Summary
 {Spec summary — 1-3 sentences}
