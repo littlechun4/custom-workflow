@@ -19,6 +19,21 @@ def run(cmd):
     return json.loads(subprocess.run(cmd, capture_output=True, text=True, check=True).stdout)
 
 
+def get_origin_repo():
+    """Parse owner/name from git origin remote URL (works for forks)."""
+    import re
+    url = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    m = re.search(r"[:/]([^/]+)/([^/.]+?)(?:\.git)?$", url)
+    if not m:
+        # Fallback to gh repo view
+        repo = run(["gh", "repo", "view", "--json", "owner,name"])
+        return repo["owner"]["login"], repo["name"]
+    return m.group(1), m.group(2)
+
+
 def main():
     if len(sys.argv) > 1:
         pr = sys.argv[1]
@@ -28,8 +43,7 @@ def main():
             capture_output=True, text=True, check=True,
         ).stdout.strip()
 
-    repo = run(["gh", "repo", "view", "--json", "owner,name"])
-    owner, name = repo["owner"]["login"], repo["name"]
+    owner, name = get_origin_repo()
 
     comments_raw = run(["gh", "api", f"repos/{owner}/{name}/pulls/{pr}/comments"])
     comments = [

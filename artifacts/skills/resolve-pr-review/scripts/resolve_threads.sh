@@ -12,8 +12,11 @@ else
     PR=$(gh pr view --json number -q .number)
 fi
 
-OWNER=$(gh repo view --json owner -q .owner.login)
-NAME=$(gh repo view --json name -q .name)
+# Parse owner/name from origin remote (works for forks)
+ORIGIN_URL=$(git remote get-url origin)
+REPO_SLUG=$(echo "$ORIGIN_URL" | sed -E 's#.+[:/]([^/]+/[^/.]+)(\.git)?$#\1#')
+OWNER=$(echo "$REPO_SLUG" | cut -d/ -f1)
+NAME=$(echo "$REPO_SLUG" | cut -d/ -f2)
 
 THREAD_IDS=$(gh api graphql -f query="{
   repository(owner: \"$OWNER\", name: \"$NAME\") {
